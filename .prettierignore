@@ -1,0 +1,13 @@
+pgsql
+Copy code
+node_modules/
+dist/
+build/
+.env
+*.min.js
+*.png
+*.jpg
+*.jpeg
+*.svg
+package-lock.json
+yarn.lock
