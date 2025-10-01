@@ -1,4 +1,6 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 const { Schema } = mongoose;
 
 const PremiumSchema = new Schema({
@@ -10,26 +12,48 @@ const PremiumSchema = new Schema({
 }, { _id: false });
 
 const UserSchema = new Schema({
+    email: { type: String, required: true, lowercase: true, unique: true, index: true },
+    refreshToken: { type: String },
+
     phoneNumber: { type: Number, index: true },
-    email: { type: String, lowercase: true, index: true },
-    avatar: { type: String },
     U_Id: { type: String, unique: true },        // custom id
     description: { type: String },
     tags: [{ type: String }],
     interests: [{ type: String }],
 
-    // relations: arrays of ObjectId referencing other models
-    posts: [{ type: Schema.Types.ObjectId, ref: 'Post' }],        
-    rooms: [{ type: Schema.Types.ObjectId, ref: 'Room' }],       
-    primaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }], 
+    // relations
+    posts: [{ type: Schema.Types.ObjectId, ref: 'Post' }],
+    rooms: [{ type: Schema.Types.ObjectId, ref: 'Room' }],
+    primaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     secondaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    searchHistory: [{ type: Schema.Types.ObjectId, ref: 'User' }],     
-    dailyAsk: { type: Schema.Types.ObjectId, ref: 'DailyAsk' },  
+    searchHistory: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    dailyAsk: { type: Schema.Types.ObjectId, ref: 'DailyAsk' },
     isVerified: { type: Boolean, default: false },
 
-    premium: PremiumSchema,  
+    premium: PremiumSchema,
 }, {
     timestamps: true
 });
 
-module.exports = mongoose.model('User', UserSchema);
+// Pre-save hook for hashing password
+UserSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) return next();
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+});
+
+// Method to check password
+UserSchema.methods.isPasswordCorrect = async function (password) {
+    return bcrypt.compare(password, this.password);
+};
+
+// Generate Access Token
+UserSchema.methods.generateAccessToken = function () {
+    return jwt.sign(
+        { _id: this._id, email: this.email },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "30d" }
+    );
+};
+
+export const User = mongoose.model('User', UserSchema);

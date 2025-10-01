@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 // You used question01..question05 — your choice: fixed fields or array.
@@ -10,4 +10,4 @@ const DailyAskSchema = new Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model('DailyAsk', DailyAskSchema);
+export const DailyAsk = mongoose.model('DailyAsk', DailyAskSchema);
