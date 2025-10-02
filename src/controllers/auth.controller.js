@@ -1,8 +1,14 @@
+import dotenv from "dotenv";
+dotenv.config();
 import { User } from '../models/User.models.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
+// Google Sign-In using ID token
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClient = new OAuth2Client(googleClientId);
 
 // Generate Access Token
 const generateAccessToken = (user) => {
@@ -25,52 +31,115 @@ const sendOtp = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { otp }, "OTP sent successfully"));
 });
 
-// Mock Google Auth verification (replace with real API)
-const googleAuth = async (email, googleId) => {
-    // if (!email || !googleId) return false;
-    return true; // assume verified
+// Real Google ID token verification helper
+const verifyGoogleIdToken = async (idToken) => {
+    if (!googleClientId) {
+        console.log(googleClientId);
+        
+        throw new ApiError(500, "GOOGLE_CLIENT_ID is fuck you");
+    }
+    const ticket = await googleClient.verifyIdToken({ idToken, audience: googleClientId });
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub } = payload;
+    if (!email || !sub) {
+        throw new ApiError(401, "Invalid Google token payload");
+    }
+    return { email, name, picture, googleId: sub };
 };
 
-// Main auth function (register + login)
+const googleSignIn = asyncHandler(async (req, res) => {
+    const { idToken } = req.body;
+
+    if (!googleClientId) {
+        throw new ApiError(500, 'Server misconfiguration: GOOGLE_CLIENT_ID is missing');
+    }
+
+    if (!idToken) {
+        throw new ApiError(400, 'ID token is required');
+    }
+
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: googleClientId,
+        });
+
+        const payload = ticket.getPayload();
+        const { email, name, picture, sub: googleId } = payload;
+
+        if (!email) {
+            throw new ApiError(400, 'Google token missing email');
+        }
+
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            const U_Id = `U_${Date.now()}`;
+            user = await User.create({
+                email,
+                U_Id,
+                isVerified: true,
+                description: '',
+                tags: [],
+                interests: [],
+            });
+        }
+
+        const accessToken = generateAccessToken(user);
+
+        return res.status(200).json(new ApiResponse(200, {
+            accessToken,
+            user,
+            profile: { name, picture, googleId },
+        }, 'Google sign-in successful'));
+    } catch (error) {
+        console.error('Google sign-in error:', error);
+        throw new ApiError(401, 'Invalid ID token');
+    }
+});
+
+// Main auth function (register + login) with Google verification and OTP flow
 const authUser = asyncHandler(async (req, res) => {
-    const { phoneNumber, email, otp, googleId } = req.body;
+    const { phoneNumber, otp, idToken } = req.body;
 
-    if (!phoneNumber) {
-        throw new ApiError(400, "Phone number is required");
-    }
+    if (!phoneNumber) throw new ApiError(400, "Phone number is required");
+    if (!idToken) throw new ApiError(400, "Google ID token is required");
 
-    if (!email) {
-        throw new ApiError(400, "Email is required");
-    }
+    // Verify Google token and extract profile
+    const { email, name, picture, googleId } = await verifyGoogleIdToken(idToken);
+
+    // Step 1: Check if user exists by phone number
+    let user = await User.findOne({ phoneNumber });
+
+    if (user) {
+        // Existing: enforce email and googleId match
+        if (user.email !== email) {
+            throw new ApiError(401, "Wrong Gmail for this number");
+        }
+        if (user.googleId && user.googleId !== googleId) {
+            throw new ApiError(401, "Google account mismatch for this user");
+        }
 
     if (!googleId) {
         throw new ApiError(400, "Google ID is required");
     }
 
-    // Step 1: Check if user exists
-    let user = await User.findOne({ phoneNumber });
-
-    if (user) {
-        // Existing user → verify Gmail via Google Auth
-        const isGoogleVerified = await googleAuth(email, googleId);
-        if (!isGoogleVerified) throw new ApiError(401, "Google Auth failed");
-        if (user.email !== email) throw new ApiError(401, "Wrong Gmail for this number");
-
         const accessToken = generateAccessToken(user);
-        return res.status(200).json(new ApiResponse(200, { accessToken, user }, "Login successful via Google Auth"));
+        return res.status(200).json(new ApiResponse(200, { accessToken, user }, "Login successful via Google"));
     }
 
-    // Step 2: New user → verify OTP first
-    if (!otp || otp !== "6969") throw new ApiError(401, "Invalid OTP");
+    // New user path: require OTP (dev: 6969)
+    if (!otp) throw new ApiError(400, "OTP is required");
+    if (otp !== "6969") throw new ApiError(401, "Invalid OTP");
 
-    const isGoogleVerified = await googleAuth(email, googleId);
-    if (!isGoogleVerified) throw new ApiError(401, "Google Auth failed");
-
-    // Step 3: Register new user
+    // Create new user with verified Google identity
     const U_Id = `U_${Date.now()}`;
     user = await User.create({
         phoneNumber,
         email,
+        googleId,
+        name,
+        picture,
         U_Id,
         isVerified: true,
         description: "",
@@ -90,7 +159,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 export {
     sendOtp,
     generateAccessToken,
-    googleAuth,
     logoutUser,
-    authUser
+    authUser,
+    googleSignIn
 };
