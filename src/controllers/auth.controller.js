@@ -35,8 +35,16 @@ const googleAuth = async (email, googleId) => {
 const authUser = asyncHandler(async (req, res) => {
     const { phoneNumber, email, otp, googleId } = req.body;
 
-    if (!phoneNumber || !email || !googleId) {
-        throw new ApiError(400, "Phone, email, and Google ID are required");
+    if (!phoneNumber) {
+        throw new ApiError(400, "Phone number is required");
+    }
+
+    if (!email) {
+        throw new ApiError(400, "Email is required");
+    }
+
+    if (!googleId) {
+        throw new ApiError(400, "Google ID is required");
     }
 
     // Step 1: Check if user exists
