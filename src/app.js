@@ -37,7 +37,7 @@ import premiumRoutes from './routes/premium.routes.js';
 import dailyAskRoutes from './routes/dailyAsk.routes.js';
 
 // Routes
-app.use('/api/v1/users', authRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes); 
 app.use('/api/v1/posts', postRoutes);
 app.use('/api/v1/comments', commentRoutes);

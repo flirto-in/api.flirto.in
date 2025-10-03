@@ -23,7 +23,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
         throw new ApiError(401, 'Invalid token payload');
     }
 
-    const user = await User.findById(decoded._id).select('-refreshToken');
+    const user = await User.findById(decoded._id);
     if (!user) {
         throw new ApiError(401, 'User not found for this token');
     }
@@ -31,6 +31,3 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     req.user = user;
     next();
 });
-
-
-

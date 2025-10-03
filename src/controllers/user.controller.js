@@ -26,7 +26,6 @@ export const getUserProfile = asyncHandler(async (req, res) => {
     );
 });
 
-
 // PUT /users/:id → Update user profile
 export const updateUserProfile = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -155,7 +154,7 @@ export const verifyUser = asyncHandler(async (req, res) => {
     }
 
     res.status(200).json(new ApiResponse(200, { user }, "User verified successfully"));
-});
+}); 
 
 // PUT /users/:id/premium → Update premium subscription
 export const updatePremiumSubscription = asyncHandler(async (req, res) => {

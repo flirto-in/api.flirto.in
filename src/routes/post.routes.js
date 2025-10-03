@@ -1,4 +1,5 @@
 import express from 'express';
+import { verifyJWT } from '../middlewares/auth.middleware.js';
 import {
     createPost,
     getPost,
@@ -11,18 +12,18 @@ import {
 
 const router = express.Router();
 
-// Post routes
-router.route('/')
-    .post(createPost);  // POST /posts
+// Post routes 
+router.route('/') 
+    .post(verifyJWT , createPost);  // http://localhost:3000/api/v1/posts
 
 router.route('/:id')
-    .get(getPost)       // GET /posts/:id
-    .put(updatePost)    // PUT /posts/:id
-    .delete(deletePost); // DELETE /posts/:id
+    .get(getPost)       // GET http://localhost:3000/api/v1/posts/:id
+    .put(updatePost)    // PUT http://localhost:3000/api/v1/posts/:id
+    .delete(deletePost); // DELETE http://localhost:3000/api/v1/posts/:id
 
 // Post interaction routes
-router.post('/:id/like', likePost);           // POST /posts/:id/like
-router.post('/:id/comment', addCommentToPost); // POST /posts/:id/comment
-router.get('/:id/comments', getPostComments); // GET /posts/:id/comments
+router.post('/:id/like', likePost);           // POST http://localhost:3000/api/v1/posts/:id/like
+router.post('/:id/comment', addCommentToPost); // POST http://localhost:3000/api/v1/posts/:id/comment
+router.get('/:id/comments', getPostComments); // GET http://localhost:3000/api/v1/posts/:id/comments
 
 export default router;

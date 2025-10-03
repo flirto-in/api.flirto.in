@@ -6,14 +6,14 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
-// Google Sign-In using ID token
+
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(googleClientId);
 
 // Generate Access Token
 const generateAccessToken = (user) => {
     return jwt.sign(
-        { _id: user._id, phoneNumber: user.phoneNumber, email: user.email, U_Id: user.U_Id },
+        { _id: user._id},
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: "30d" }
     );
