@@ -13,7 +13,7 @@ const googleClient = new OAuth2Client(googleClientId);
 // Generate Access Token
 const generateAccessToken = (user) => {
     return jwt.sign(
-        { _id: user._id},
+        { _id: user._id },
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: "30d" }
     );
@@ -24,9 +24,12 @@ const sendOtp = asyncHandler(async (req, res) => {
     const { phoneNumber } = req.body;
     if (!phoneNumber) throw new ApiError(400, "Phone number is required");
 
-    const otp = process.env.NODE_ENV === "production"
-        ? Math.floor(1000 + Math.random() * 9000).toString()
-        : "6969";
+    // const otp = process.env.NODE_ENV === "devlopment"
+    //     ? Math.floor(1000 + Math.random() * 9000).toString()
+    //     : "6969";
+
+        const otp = "6969";
+
 
     return res.status(200).json(new ApiResponse(200, { otp }, "OTP sent successfully"));
 });
@@ -35,7 +38,7 @@ const sendOtp = asyncHandler(async (req, res) => {
 // const verifyGoogleIdToken = async (idToken) => {
 //     if (!googleClientId) {
 //         console.log(googleClientId);
-        
+
 //         throw new ApiError(500, "GOOGLE_CLIENT_ID is fuck you");
 //     }
 //     const ticket = await googleClient.verifyIdToken({ idToken, audience: googleClientId });
@@ -114,16 +117,19 @@ const authUser = asyncHandler(async (req, res) => {
 
     if (user) {
         // Existing: enforce email and googleId match
-    //     if (user.email !== email) {
-    //         throw new ApiError(401, "Wrong Gmail for this number");
-    //     }
-    //     if (user.googleId && user.googleId !== googleId) {
-    //         throw new ApiError(401, "Google account mismatch for this user");
-    //     }
+        //     if (user.email !== email) {
+        //         throw new ApiError(401, "Wrong Gmail for this number");
+        //     }
+        //     if (user.googleId && user.googleId !== googleId) {
+        //         throw new ApiError(401, "Google account mismatch for this user");
+        //     }
 
-    // if (!googleId) {
-    //     throw new ApiError(400, "Google ID is required");
-    // }
+        // if (!googleId) {
+        //     throw new ApiError(400, "Google ID is required");
+        // }
+
+        if (!otp) throw new ApiError(400, "OTP is required");
+        if (otp !== "6969") throw new ApiError(401, "Invalid OTP");
 
         const accessToken = generateAccessToken(user);
         return res.status(200).json(new ApiResponse(200, { accessToken, user }, "Login successful via Google"));
