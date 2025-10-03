@@ -12,7 +12,7 @@ const PremiumSchema = new Schema({
 }, { _id: false });
 
 const UserSchema = new Schema({
-    email: { type: String, required: true, lowercase: true, unique: true},
+    //email: { type: String, required: true, lowercase: true, unique: true},
     refreshToken: { type: String },
 
     phoneNumber: { type: Number}, 
