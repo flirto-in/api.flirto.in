@@ -1,8 +1,7 @@
 import express from 'express';
 import {
     getDailyQuestions,
-    saveDailyAnswers,
-    updateDailyAnswers
+    saveDailyAnswers
 } from '../controllers/dailyAsk.controller.js';
 
 const router = express.Router();
@@ -11,6 +10,5 @@ const router = express.Router();
 router.route('/:userId')
     .get(getDailyQuestions)     // GET /daily-ask/:userId
     .post(saveDailyAnswers)     // POST /daily-ask/:userId
-    .put(updateDailyAnswers);   // PUT /daily-ask/:userId
 
 export default router;

@@ -27,16 +27,3 @@ export const saveDailyAnswers = asyncHandler(async (req, res) => {
         new ApiResponse(201, {}, "Daily answers saved successfully")
     );
 });
-
-// PUT /daily-ask/:userId → Update answers
-export const updateDailyAnswers = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    const { answers } = req.body;
-    
-    // TODO: Implement business logic to update daily answers
-    // Example: const dailyAsk = await DailyAsk.findOneAndUpdate({ user: userId, date: new Date() }, { answers }, { new: true });
-    
-    res.status(200).json(
-        new ApiResponse(200, {}, "Daily answers updated successfully")
-    );
-});

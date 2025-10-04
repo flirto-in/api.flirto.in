@@ -102,29 +102,3 @@ export const likePost = asyncHandler(async (req, res) => {
         return res.status(200).json(new ApiResponse(200, {}, "Post unliked successfully"));
     }
 });
-
-
-// POST /posts/:id/comment → Add comment to post
-export const addCommentToPost = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { content, author } = req.body;
-
-    // TODO: Implement business logic to add a comment to a post
-    // Example: const comment = await Comment.create({ content, author, post: id });
-
-    res.status(201).json(
-        new ApiResponse(201, {}, "Comment added successfully")
-    );
-});
-
-// GET /posts/:id/comments → Get all comments
-export const getPostComments = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
-    // TODO: Implement business logic to get all comments for a post
-    // Example: const comments = await Comment.find({ post: id }).populate('author');
-
-    res.status(200).json(
-        new ApiResponse(200, {}, "Comments retrieved successfully")
-    );
-});

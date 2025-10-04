@@ -35,7 +35,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid user ID");
     }
 
-    const allowedFields = ['description', 'tags', 'interests'];
+    const allowedFields = ['U_Id', 'description', 'tags', 'interests'];
     const sanitizedUpdate = Object.fromEntries(
         Object.entries(updateData).filter(([key]) => allowedFields.includes(key))
     );
