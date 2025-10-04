@@ -1,5 +1,4 @@
 import { Post } from '../models/Post.models.js';
-import { Comment } from '../models/Comment.models.js';
 import { User } from '../models/User.models.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -89,16 +88,21 @@ export const likePost = asyncHandler(async (req, res) => {
     // initialize likes array if undefined
     if (!post.likes) post.likes = [];
 
-    // push userId
-    post.likes.push(userId);
-
-    // save changes
-    await post.save();
-
-    res.status(200).json(
-        new ApiResponse(200, {}, "Post liked successfully")
-    );
+    // check if user has already liked
+    const index = post.likes.indexOf(userId);
+    if (index === -1) {
+        // not liked yet, add userId
+        post.likes.push(userId);
+        await post.save();
+        return res.status(200).json(new ApiResponse(200, {}, "Post liked successfully"));
+    } else {
+        // already liked, remove userId
+        post.likes.splice(index, 1);
+        await post.save();
+        return res.status(200).json(new ApiResponse(200, {}, "Post unliked successfully"));
+    }
 });
+
 
 // POST /posts/:id/comment → Add comment to post
 export const addCommentToPost = asyncHandler(async (req, res) => {

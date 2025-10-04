@@ -17,13 +17,13 @@ router.route('/')
     .post(verifyJWT , createPost);  // http://localhost:3000/api/v1/posts
 
 router.route('/:id')
-    .get(getPost)       // GET http://localhost:3000/api/v1/posts/:id
-    .put(updatePost)    // PUT http://localhost:3000/api/v1/posts/:id
-    .delete(deletePost); // DELETE http://localhost:3000/api/v1/posts/:id
+    .get(verifyJWT , getPost)       // GET http://localhost:3000/api/v1/posts/:id
+    .put(verifyJWT , updatePost)    // PUT http://localhost:3000/api/v1/posts/:id
+    .delete(verifyJWT , deletePost); // DELETE http://localhost:3000/api/v1/posts/:id
 
 // Post interaction routes
-router.post('/:id/like', likePost);           // POST http://localhost:3000/api/v1/posts/:id/like
-router.post('/:id/comment', addCommentToPost); // POST http://localhost:3000/api/v1/posts/:id/comment
-router.get('/:id/comments', getPostComments); // GET http://localhost:3000/api/v1/posts/:id/comments
+router.post('/:id/like', verifyJWT , likePost);           // POST http://localhost:3000/api/v1/posts/:id/like
+router.post('/:id/comment', verifyJWT , addCommentToPost); // POST http://localhost:3000/api/v1/posts/:id/comment
+router.get('/:id/comments', verifyJWT , getPostComments); // GET http://localhost:3000/api/v1/posts/:id/comments
 
 export default router;

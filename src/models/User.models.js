@@ -15,13 +15,21 @@ const UserSchema = new Schema({
     //email: { type: String, required: true, lowercase: true, unique: true},
     refreshToken: { type: String },
 
-    phoneNumber: { type: Number}, 
-    googleId: { type: String},
-    name: { type: String },
-    picture: { type: String },
+    phoneNumber: { type: Number },
+    // googleId: { type: String},
+    // name: { type: String },
+    // picture: { type: String },
     U_Id: { type: String, unique: true },        // custom id
     description: { type: String },
-    tags: [{ type: String }],
+    tags: {
+        type: [String],
+        validate: {
+            validator: function (v) {
+                return v.length <= 3; 
+            },
+            message: "You can add a maximum of 3 tags.",
+        },
+    },
     interests: [{ type: String }],
 
     // relations
