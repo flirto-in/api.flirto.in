@@ -15,10 +15,9 @@ import {
 const router = express.Router();
 
 // User profile routes
-router.route('/:id')
-    .get(verifyJWT, getUserProfile)      //  http://localhost:3000/api/v1/users/:id
-    .patch(verifyJWT, updateUserProfile)   //  http://localhost:3000/api/v1/users/:id
-    .delete(verifyJWT, deleteUser);      //  http://localhost:3000/api/v1/users/:id 
+router.get('/:id', verifyJWT, getUserProfile)      //  http://localhost:3000/api/v1/users/:id
+
+router.patch('/:id', verifyJWT, updateUserProfile)   //  http://localhost:3000/api/v1/users/:id
 
 // User search history route
 router.get('/:id/search-history', verifyJWT, getUserSearchHistory);  //  http://localhost:3000/api/v1/users/:id/search-history
