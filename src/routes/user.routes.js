@@ -17,7 +17,7 @@ const router = express.Router();
 // User profile routes
 router.route('/:id')
     .get(verifyJWT, getUserProfile)      //  http://localhost:3000/api/v1/users/:id
-    .put(verifyJWT, updateUserProfile)   //  http://localhost:3000/api/v1/users/:id
+    .patch(verifyJWT, updateUserProfile)   //  http://localhost:3000/api/v1/users/:id
     .delete(verifyJWT, deleteUser);      //  http://localhost:3000/api/v1/users/:id 
 
 // User search history route
