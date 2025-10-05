@@ -31,7 +31,7 @@ const sendOtp = asyncHandler(async (req, res) => {
         const otp = "6969";
 
 
-    return res.status(200).json(new ApiResponse(200, { otp }, "OTP sent successfully"));
+    return res.status(200).json(new ApiResponse(200, { }, "OTP sent successfully"));
 });
 
 // Real Google ID token verification helper
@@ -132,7 +132,7 @@ const authUser = asyncHandler(async (req, res) => {
         if (otp !== "6969") throw new ApiError(401, "Invalid OTP");
 
         const accessToken = generateAccessToken(user);
-        return res.status(200).json(new ApiResponse(200, { accessToken, user }, "Login successful via Google"));
+        return res.status(200).json(new ApiResponse(200, { accessToken, id : user._id }, "Login successful"));
     }
 
     // New user path: require OTP (dev: 6969)
@@ -157,15 +157,9 @@ const authUser = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(201, { accessToken, user }, "User registered & logged in"));
 });
 
-// Logout 
-const logoutUser = asyncHandler(async (req, res) => {
-    return res.status(200).json(new ApiResponse(200, {}, "User logged out (client should clear token)"));
-});
-
 export {
     sendOtp,
     generateAccessToken,
-    logoutUser,
     authUser,
     // googleSignIn
 };

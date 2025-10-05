@@ -5,21 +5,65 @@ import {
     getPost,
     updatePost,
     deletePost,
-    likePost
+    likePost,
+    getAllPosts
 } from '../controllers/post.controller.js';
 
 const router = express.Router();
 
-// Post routes 
-router.route('/') 
-    .post(verifyJWT , createPost);  // http://localhost:3000/api/v1/posts
+/*
+    * @api http://localhost:3000/api/v1/posts
+    * @method GET
+    * @accept post content
+    * @return post data
+*/
+router.route('/').post(verifyJWT, createPost);
 
 router.route('/:id')
-    .get(verifyJWT , getPost)       // GET http://localhost:3000/api/v1/posts/:id
-    .put(verifyJWT , updatePost)    // PUT http://localhost:3000/api/v1/posts/:id
-    .delete(verifyJWT , deletePost); // DELETE http://localhost:3000/api/v1/posts/:id
+    /*
+        * @api GET http://localhost:3000/api/v1/posts/{id}
+        * @method GET
+        * @accept postID from path params  and post content
+        * @return post single data
+    */
+    .get(verifyJWT, getPost)
+    /*
+        * @api GET http://localhost:3000/api/v1/posts/{id}
+        * @method PUT
+        * @accept postID from path params and content from body
+        * @return post data
+    */
+    .put(verifyJWT, updatePost)
+    /*
+        * @api GET http://localhost:3000/api/v1/posts/{id}
+        * @method DELETE
+        * @accept postID from path params 
+        * @return success message
+    */
+    .delete(verifyJWT, deletePost);
 
-// Post interaction routes
-router.post('/:id/like', verifyJWT , likePost);           // POST http://localhost:3000/api/v1/posts/:id/like
+/*
+    * @api GET http://localhost:3000/api/v1/posts/{id}/like
+    * @method POST
+    * @accept postID from path params 
+    * @return success message
+*/
+router.post('/:id/like', verifyJWT, likePost);
+
+/*
+    * @api GET http://localhost:3000/api/v1/posts/{id}/like
+    * @method POST
+    * @accept postID from path params 
+    * @return success message
+*/
+router.post('/:id/like', verifyJWT, likePost);
+
+/*
+    * @api GET http://localhost:3000/api/v1/posts/AllPosts
+    * @method GET
+    * @accept userID from body
+    * @return all post objects id
+*/
+router.get('/AllPosts', verifyJWT, getAllPosts);
 
 export default router;

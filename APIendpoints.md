@@ -10,7 +10,6 @@
 - http://localhost:3000/api/v1/users/:id              PUT✅
 - http://localhost:3000/api/v1/users/:id           DELETE✅
 - http://localhost:3000/api/v1/users/:id/search-history  ✅
-- http://localhost:3000/api/v1/users/:id/tags            ✅
 - http://localhost:3000/api/v1/users/:id/posts           ✅
 - http://localhost:3000/api/v1/users/:id/rooms           ✅
 - http://localhost:3000/api/v1/users/:id/verify          ✅

@@ -102,3 +102,16 @@ export const likePost = asyncHandler(async (req, res) => {
         return res.status(200).json(new ApiResponse(200, {}, "Post unliked successfully"));
     }
 });
+
+export const getAllPosts = asyncHandler(async (req, res) => {
+    const { userId } = req.body;
+
+    // find all posts
+    const posts = await Post.find({ createdBy: userId })
+        .populate('createdBy')
+        .populate('likes');
+
+    res.status(200).json(
+        new ApiResponse(200, { posts }, "Posts retrieved successfully")
+    );
+});

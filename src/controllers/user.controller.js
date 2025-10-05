@@ -50,22 +50,6 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, { user }, "User profile updated successfully"));
 });
 
-// DELETE /users/:id → Delete user
-export const deleteUser = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new ApiError(400, "Invalid user ID");
-    }
-
-    const deleted = await User.findByIdAndDelete(id);
-    if (!deleted) {
-        throw new ApiError(404, 'User not found');
-    }
-
-    res.status(200).json(new ApiResponse(200, {}, "User deleted successfully"));
-});
-
 // GET /users/:id/search-history → Get search history
 export const getUserSearchHistory = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -83,28 +67,6 @@ export const getUserSearchHistory = asyncHandler(async (req, res) => {
     }
 
     res.status(200).json(new ApiResponse(200, { searchHistory: user.searchHistory }, "Search history retrieved successfully"));
-});
-
-// POST /users/:id/tags → Add or update tags/interests
-export const updateUserTags = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { tags, interests } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new ApiError(400, "Invalid user ID");
-    }
-
-    const user = await User.findByIdAndUpdate(
-        id,
-        { ...(Array.isArray(tags) ? { tags } : {}), ...(Array.isArray(interests) ? { interests } : {}) },
-        { new: true }
-    ).select('-__v -refreshToken');
-
-    if (!user) {
-        throw new ApiError(404, 'User not found');
-    }
-
-    res.status(200).json(new ApiResponse(200, { user }, "Tags and interests updated successfully"));
 });
 
 // GET /users/:id/posts → Get all posts of a user
@@ -157,7 +119,7 @@ export const verifyUser = asyncHandler(async (req, res) => {
 }); 
 
 // PUT /users/:id/premium → Update premium subscription
-export const updatePremiumSubscription = asyncHandler(async (req, res) => {
+export const showPremiumSubscription = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { premium } = req.body;
 
