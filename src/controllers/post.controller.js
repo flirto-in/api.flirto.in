@@ -62,39 +62,49 @@ export const deletePost = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Post not found");
     }
 
+    await User.findByIdAndUpdate(post.createdBy, {
+        $pull: { posts: post._id }
+    });
+
     res.status(200).json(
         new ApiResponse(200, {}, "Post deleted successfully")
     );
 });
 
-// POST /posts/:id/like → Like post
-export const likePost = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { userId } = req.body;
 
-    // find post
-    const post = await Post.findById(id);
-    if (!post) {
-        throw new ApiError(404, "Post not found");
+// POST /posts/:userId/:postId/like → Like/Unlike post
+export const likePost = asyncHandler(async (req, res) => {
+    const { id: userId, postId } = req.params;
+
+    // Validate ObjectIds
+    if (!mongoose.Types.ObjectId.isValid(postId) || !mongoose.Types.ObjectId.isValid(userId)) {
+        throw new ApiError(400, "Invalid postId or userId format");
     }
 
-    // initialize likes array if undefined
+    // Check user exists
+    const user = await User.findById(userId);
+    if (!user) throw new ApiError(404, "User not found");
+
+    // Check post exists
+    const post = await Post.findById(postId);
+    if (!post) throw new ApiError(404, "Post not found");
+
+    // Initialize likes array
     if (!post.likes) post.likes = [];
 
-    // check if user has already liked
-    const index = post.likes.indexOf(userId);
-    if (index === -1) {
-        // not liked yet, add userId
+    // Toggle like/unlike
+    const alreadyLiked = post.likes.some(uid => uid.toString() === userId.toString());
+    if (alreadyLiked) {
+        post.likes = post.likes.filter(uid => uid.toString() !== userId.toString());
+        await post.save();
+        return res.status(200).json(new ApiResponse(200, {}, "Post unliked successfully"));
+    } else {
         post.likes.push(userId);
         await post.save();
         return res.status(200).json(new ApiResponse(200, {}, "Post liked successfully"));
-    } else {
-        // already liked, remove userId
-        post.likes.splice(index, 1);
-        await post.save();
-        return res.status(200).json(new ApiResponse(200, {}, "Post unliked successfully"));
     }
 });
+
 
 export const getAllPosts = asyncHandler(async (req, res) => {
     const posts = await Post.find()

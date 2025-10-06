@@ -35,12 +35,13 @@ router.get('/user/:id', verifyJWT, getPostsByUser);
 router.route('/:id').delete(verifyJWT, deletePost);
 
 /**
-    * @api GET http://localhost:3000/api/v1/posts/{id}/like
+    * @api GET http://localhost:3000/api/v1/posts/{id}/{postID}/like
     * @method POST
     * @accept postID from path params 
     * @return success message
 */
-router.post('/:id/like', verifyJWT, likePost);
+router.post("/:id/:postId/like", verifyJWT, likePost);
+
 
 /**
     * @api GET http://localhost:3000/api/v1/posts/AllPosts
