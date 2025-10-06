@@ -3,8 +3,9 @@ import { User } from '../models/User.models.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
+import mongoose from "mongoose";
 
-// POST /posts → Create post
+// POST /posts → Create post 
 export const createPost = asyncHandler(async (req, res) => {
     const { content } = req.body;
 
@@ -21,42 +22,34 @@ export const createPost = asyncHandler(async (req, res) => {
 
 
     res.status(201).json(
-        new ApiResponse(201, { post }, "Post created successfully")
+        new ApiResponse(201, {}, "Post created successfully")
     );
 });
 
-// GET /posts/:id → Get single post
-export const getPost = asyncHandler(async (req, res) => {
+// GET /posts/:id → Get post by user
+export const getPostsByUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const post = await Post.findById(id)
-        .populate('createdBy')
-        .populate('likes')
-        .populate({
-            path: 'comments',
-            populate: {
-                path: 'author'
-            }
-        });
-    if (!post) {
-        throw new ApiError(404, "Post not found");
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new ApiError(400, "Invalid user ID");
     }
-    res.status(200).json(
-        new ApiResponse(200, { post }, "Post retrieved successfully")
-    );
-});
 
-// PUT /posts/:id → Update post
-export const updatePost = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const updateData = req.body;
+    const user = await User.findById(id).populate('posts');
+    if (!user) {
+        throw new ApiError(404, 'User not found');
+    }
 
-    const post = await Post.findByIdAndUpdate(id, updateData, { new: true });
-    if (!post) {
-        throw new ApiError(404, "Post not found");
+    const posts = await Post.find({ createdBy: id })
+        .populate("createdBy", "U_Id description tags") // select specific fields
+        .populate("likes", "U_Id")
+        .sort({ createdAt: -1 }); // newest first
+
+    if (!posts || posts.length === 0) {
+        throw new ApiError(404, "This user has no posts yet");
     }
 
     res.status(200).json(
-        new ApiResponse(200, { post }, "Post updated successfully")
+        new ApiResponse(200, { posts }, "User posts retrieved successfully")
     );
 });
 
@@ -104,13 +97,9 @@ export const likePost = asyncHandler(async (req, res) => {
 });
 
 export const getAllPosts = asyncHandler(async (req, res) => {
-    const { userId } = req.body;
-
-    // find all posts
-    const posts = await Post.find({ createdBy: userId })
+    const posts = await Post.find()
         .populate('createdBy')
         .populate('likes');
-
     res.status(200).json(
         new ApiResponse(200, { posts }, "Posts retrieved successfully")
     );

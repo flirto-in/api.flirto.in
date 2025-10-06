@@ -2,8 +2,7 @@ import express from 'express';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 import {
     createPost,
-    getPost,
-    updatePost,
+    getPostsByUser,
     deletePost,
     likePost,
     getAllPosts
@@ -11,57 +10,42 @@ import {
 
 const router = express.Router();
 
-/*
+/**
     * @api http://localhost:3000/api/v1/posts
-    * @method GET
+    * @method POST
     * @accept post content
-    * @return post data
+    * @return suscess message 
 */
 router.route('/').post(verifyJWT, createPost);
 
-router.route('/:id')
-    /*
-        * @api GET http://localhost:3000/api/v1/posts/{id}
-        * @method GET
-        * @accept postID from path params  and post content
-        * @return post single data
-    */
-    .get(verifyJWT, getPost)
-    /*
-        * @api GET http://localhost:3000/api/v1/posts/{id}
-        * @method PUT
-        * @accept postID from path params and content from body
-        * @return post data
-    */
-    .put(verifyJWT, updatePost)
-    /*
-        * @api GET http://localhost:3000/api/v1/posts/{id}
-        * @method DELETE
-        * @accept postID from path params 
-        * @return success message
-    */
-    .delete(verifyJWT, deletePost);
-
-/*
-    * @api GET http://localhost:3000/api/v1/posts/{id}/like
-    * @method POST
-    * @accept postID from path params 
-    * @return success message
-*/
-router.post('/:id/like', verifyJWT, likePost);
-
-/*
-    * @api GET http://localhost:3000/api/v1/posts/{id}/like
-    * @method POST
-    * @accept postID from path params 
-    * @return success message
-*/
-router.post('/:id/like', verifyJWT, likePost);
-
-/*
-    * @api GET http://localhost:3000/api/v1/posts/AllPosts
+/**
+    * @api GET http://localhost:3000/api/v1/posts/user/{id}
     * @method GET
     * @accept userID from body
+    * @return all post objects id of user 
+*/
+router.get('/user/:id', verifyJWT, getPostsByUser);
+
+/**
+    * @api GET http://localhost:3000/api/v1/posts/{id}
+    * @method DELETE
+    * @accept postID from path params 
+    * @return success message
+*/
+router.route('/:id').delete(verifyJWT, deletePost);
+
+/**
+    * @api GET http://localhost:3000/api/v1/posts/{id}/like
+    * @method POST
+    * @accept postID from path params 
+    * @return success message
+*/
+router.post('/:id/like', verifyJWT, likePost);
+
+/**
+    * @api GET http://localhost:3000/api/v1/posts/AllPosts
+    * @method GET
+    * @accept nothing
     * @return all post objects id
 */
 router.get('/AllPosts', verifyJWT, getAllPosts);
