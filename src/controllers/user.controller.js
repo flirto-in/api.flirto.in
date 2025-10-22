@@ -35,7 +35,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid user ID");
     }
 
-    const allowedFields = ['U_Id', 'description', 'tags', 'interests'];
+    const allowedFields = ['description'];
     const sanitizedUpdate = Object.fromEntries(
         Object.entries(updateData).filter(([key]) => allowedFields.includes(key))
     );
@@ -50,8 +50,8 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, { user }, "User profile updated successfully"));
 });
 
-// GET /users/:id/search-history → Get search history
-export const getUserSearchHistory = asyncHandler(async (req, res) => {
+// GET /users/:id/primaryChat → Get primaryChat
+export const getUserPrimaryChat = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -59,78 +59,54 @@ export const getUserSearchHistory = asyncHandler(async (req, res) => {
     }
 
     const user = await User.findById(id)
-        .select('_id')
-        .populate('searchHistory', 'email U_Id');
+        .populate('primaryChat', '-__v');
 
     if (!user) {
-        throw new ApiError(404, 'User not found');
+        throw new ApiError(404, "User not found");
     }
 
-    res.status(200).json(new ApiResponse(200, { searchHistory: user.searchHistory }, "Search history retrieved successfully"));
+    return res.status(200).json(
+        new ApiResponse(200, { primaryChat: user.primaryChat }, "User primary chat retrieved successfully")
+    );
 });
 
-// GET /users/:id/posts → Get all posts of a user
-export const getUserPosts = asyncHandler(async (req, res) => {
+// GET /users/:id/secondaryChat → Get secondaryChat
+export const getUserSecondaryChat = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new ApiError(400, "Invalid user ID");
     }
 
-    const user = await User.findById(id).populate('posts');
+    const user = await User.findById(id)
+        .populate('secondaryChat', 'content createdAt');
+
     if (!user) {
-        throw new ApiError(404, 'User not found');
+        throw new ApiError(404, "User not found");
     }
 
-    res.status(200).json(new ApiResponse(200, { posts: user.posts }, "User posts retrieved successfully"));
+    return res.status(200).json(
+        new ApiResponse(200, { secondaryChat: user.secondaryChat }, "User secondary chat retrieved successfully")
+    );
 });
 
-// GET /users/:id/rooms → Get all rooms user is part of
-export const getUserRooms = asyncHandler(async (req, res) => {
-    const { id } = req.params;
+// GET /users/:id/chat/:chatId → Update primary and secondary Chat
+export const updateUserChat = asyncHandler(async (req, res) => {
+    const { id, chatId } = req.params;
+    const { primaryChat, secondaryChat } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new ApiError(400, "Invalid user ID");
+    if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(chatId)) {
+        throw new ApiError(400, "Invalid user ID or chat ID");
     }
 
-    const user = await User.findById(id).populate('rooms');
+    const user = await User.findByIdAndUpdate(id, { primaryChat, secondaryChat }, { new: true })
+        .select('-__v -refreshToken');
+
     if (!user) {
-        throw new ApiError(404, 'User not found');
+        throw new ApiError(404, "User not found");
     }
 
-    res.status(200).json(new ApiResponse(200, { rooms: user.rooms }, "User rooms retrieved successfully"));
-});
-
-// POST /users/:id/verify → Verify user (e.g., OTP or Google Auth)
-export const verifyUser = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { verificationCode, verificationType } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new ApiError(400, "Invalid user ID");
-    }
-
-    const user = await User.findByIdAndUpdate(id, { isVerified: true }, { new: true }).select('-__v -refreshToken');
-    if (!user) {
-        throw new ApiError(404, 'User not found');
-    }
-
-    res.status(200).json(new ApiResponse(200, { user }, "User verified successfully"));
-}); 
-
-// PUT /users/:id/premium → Update premium subscription
-export const showPremiumSubscription = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { premium } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new ApiError(400, "Invalid user ID");
-    }
-
-    const user = await User.findByIdAndUpdate(id, { premium }, { new: true }).select('-__v -refreshToken');
-    if (!user) {
-        throw new ApiError(404, 'User not found');
-    }
-
-    res.status(200).json(new ApiResponse(200, { user }, "Premium subscription updated successfully"));
+    return res.status(200).json(
+        new ApiResponse(200, { user }, "User chat updated successfully")
+    );
 });

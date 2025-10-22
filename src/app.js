@@ -8,12 +8,11 @@ const app = express();
 
 // Environment variables loaded in index.js
 
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: "*",  
+  credentials: true,
+}));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -30,18 +29,10 @@ const __dirname = dirname(__filename);
 // Import routes
 import userRoutes from './routes/user.routes.js';
 import authRoutes from './routes/auth.routes.js';
-import postRoutes from './routes/post.routes.js';
-import roomRoutes from './routes/room.routes.js';
-import premiumRoutes from './routes/premium.routes.js';
-import dailyAskRoutes from './routes/dailyAsk.routes.js';
 
 // Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes); 
-app.use('/api/v1/posts', postRoutes);
-app.use('/api/v1/rooms', roomRoutes);
-app.use('/api/v1/premium', premiumRoutes);
-app.use('/api/v1/daily-ask', dailyAskRoutes);
 
 // http://localhost:3000/api/v1/
 

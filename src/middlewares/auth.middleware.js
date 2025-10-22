@@ -19,11 +19,11 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
         throw new ApiError(401, 'Invalid or expired token');
     }
 
-    if (!decoded?._id || !mongoose.Types.ObjectId.isValid(decoded._id)) {
+    if (!decoded?.id || !mongoose.Types.ObjectId.isValid(decoded.id)) {
         throw new ApiError(401, 'Invalid token payload');
     }
 
-    const user = await User.findById(decoded._id);
+    const user = await User.findById(decoded.id);
     if (!user) {
         throw new ApiError(401, 'User not found for this token');
     }
