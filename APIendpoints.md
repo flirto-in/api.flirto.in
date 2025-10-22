@@ -1,19 +1,25 @@
-# authintication
-- http://localhost:3000/api/v1/auth/send-otp             ✅👍
-- http://localhost:3000/api/v1/auth/google               ✅✖️ pending
-- http://localhost:3000/api/v1/auth/authintication       ✅👍
+# Authentication
 
----
+POST http://localhost:3000/api/v1/auth/send-otp
+
+POST http://localhost:3000/api/v1/auth/authentication
+
 # User
-- http://localhost:3000/api/v1/users/:id              GET✅👍
-- http://localhost:3000/api/v1/users/:id            PATCH✅👍
-- http://localhost:3000/api/v1/users/:id/search-history  ✅
-- http://localhost:3000/api/v1/users/:id/posts           ✅
-- http://localhost:3000/api/v1/users/:id/rooms           ✅
-- http://localhost:3000/api/v1/users/:id/verify          ✅
----
-# Post
-- http://localhost:3000/api/v1/posts                     ✅👍
-- http://localhost:3000/api/v1/posts/user/:id         GET✅👍
-- http://localhost:3000/api/v1/posts/:id           DELETE✅👍
-- http://localhost:3000/api/v1/posts/:id/like            ✅👍
+
+GET http://localhost:3000/api/v1/users/:id
+
+PATCH http://localhost:3000/api/v1/users/:id
+
+GET http://localhost:3000/api/v1/users/:id/primaryChat
+
+GET http://localhost:3000/api/v1/users/:id/secondaryChat
+
+PATCH http://localhost:3000/api/v1/users/:id/chat/:chatId
+
+# Messages
+
+GET http://localhost:3000/api/v1/messages/search
+
+GET http://localhost:3000/api/v1/messages/all
+
+GET http://localhost:3000/api/v1/messages/:userId/messages

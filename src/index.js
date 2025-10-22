@@ -4,16 +4,14 @@ import http from "http";
 import { Server } from "socket.io";
 import { app } from "./app.js";
 import connectDb from "./db/index.db.js";
+import Message  from "./models/Message.models.js";
 
 const port = process.env.PORT || 8000;
-
-// Create HTTP server and attach Socket.IO
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: { origin: "*" },
-});
 
-// In-memory map of online users: userId -> socketId
+const io = new Server(server, { cors: { origin: "*", credentials: true } });
+
+// Online users map
 const onlineUsers = new Map();
 
 io.on("connection", (socket) => {
@@ -22,27 +20,25 @@ io.on("connection", (socket) => {
     socket.on("join", (userId) => {
         if (!userId) return;
         onlineUsers.set(userId, socket.id);
-        console.log(`User ${userId} joined with socket ${socket.id}`);
         io.emit("online-users", Array.from(onlineUsers.keys()));
     });
 
-    socket.on("private-message", ({ senderId, receiverId, message }) => {
-        const receiverSocketId = receiverId ? onlineUsers.get(receiverId) : undefined;
-        const msgObj = {
-            senderId,
-            receiverId,
-            message,
-            time: new Date().toISOString(),
-        };
+    socket.on("typing", ({ from, to, typing }) => {
+        const receiverSocketId = onlineUsers.get(to);
+        if (receiverSocketId) io.to(receiverSocketId).emit("typing", { from, typing });
+    });
 
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit("receive-message", msgObj);
-        }
+    socket.on("private-message", async ({ senderId, receiverId, text }) => {
+        if (!senderId || !receiverId || !text) return;
 
-        // Echo back to sender (useful for client-side UI rendering)
-        socket.emit("receive-message", msgObj);
+        const message = await Message.create({ senderId, receiverId, text });
 
-        console.log("Message:", msgObj);
+        // Emit to receiver
+        const receiverSocketId = onlineUsers.get(receiverId);
+        if (receiverSocketId) io.to(receiverSocketId).emit("receive-message", message);
+
+        // Echo to sender
+        socket.emit("receive-message", message);
     });
 
     socket.on("disconnect", () => {
@@ -50,7 +46,6 @@ io.on("connection", (socket) => {
             if (socketId === socket.id) {
                 onlineUsers.delete(userId);
                 io.emit("online-users", Array.from(onlineUsers.keys()));
-                console.log(`User ${userId} disconnected`);
                 break;
             }
         }
@@ -59,10 +54,6 @@ io.on("connection", (socket) => {
 
 connectDb()
     .then(() => {
-        server.listen(port, () => {
-            console.log(`🚀 App is running at http://localhost:${port}`);
-        });
+        server.listen(port, () => console.log(`🚀 App running at http://localhost:${port}`));
     })
-    .catch((error) => {
-        console.log("❌ DB connection failed {index.js} error:", error);
-    });
+    .catch((err) => console.error("❌ DB connection failed:", err));

@@ -3,33 +3,53 @@ import { verifyJWT } from '../middlewares/auth.middleware.js';
 import {
     getUserProfile,
     updateUserProfile,
+    getUserPrimaryChat,
+    getUserSecondaryChat,
+    updateUserChat
 } from '../controllers/user.controller.js';
 
 const router = express.Router();
 
 /*
-    * @api http://localhost:3000/api/v1/users/{userId}
+    * @api http://localhost:3000/api/v1/users/:id
     * @method GET
     * @accept userId from path params and auth token from headers
     * @return user profile data 
 */
-router.get('/:id', verifyJWT, getUserProfile)
+router.get('/:id', verifyJWT, getUserProfile);
 
 /*
-    * @api http://localhost:3000/api/v1/users/{userId}
+    * @api http://localhost:3000/api/v1/users/:id
     * @method PATCH
-    * @accept userId from path params and auth token from headers and user profile data from body {U_Id , description, tags, interests}
+    * @accept userId from path params and auth token from headers
+    * @accept body: {U_Id, description}
     * @return updated user profile data
 */
-router.patch('/:id', verifyJWT, updateUserProfile)
+router.patch('/:id', verifyJWT, updateUserProfile);
 
-// GET /users/:id/primaryChat → Get primaryChat
-router.get('/:id/primaryChat', verifyJWT, getUserPrimaryChat)
+/*
+    * @api http://localhost:3000/api/v1/users/:id/primaryChat
+    * @method GET
+    * @accept userId from path params and auth token from headers
+    * @return list of primary chats (sent by user)
+*/
+router.get('/:id/primaryChat', verifyJWT, getUserPrimaryChat);
 
-// GET /users/:id/secondaryChat → Get secondaryChat
-router.get('/:id/secondaryChat', verifyJWT, getUserSecondaryChat)
+/*
+    * @api http://localhost:3000/api/v1/users/:id/secondaryChat
+    * @method GET
+    * @accept userId from path params and auth token from headers
+    * @return list of secondary chats (received or pending)
+*/
+router.get('/:id/secondaryChat', verifyJWT, getUserSecondaryChat);
 
-// PATCH /users/:id/chat/:chatId → Update primary and secondary Chat
-router.patch('/:id/chat/:chatId', verifyJWT, updateUserChat)
+/*
+    * @api http://localhost:3000/api/v1/users/:id/chat/:chatId
+    * @method PATCH
+    * @accept userId and chatId from path params, auth token from headers
+    * @accept body: {primaryChat, secondaryChat}
+    * @return updated user chat info
+*/
+router.patch('/:id/chat/:chatId', verifyJWT, updateUserChat);
 
 export default router;

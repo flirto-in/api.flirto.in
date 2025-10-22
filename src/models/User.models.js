@@ -8,13 +8,13 @@ const UserSchema = new Schema({
     U_Id: { type: String, unique: true, index: true },  // Custom user ID
     description: { type: String, default: "" },
 
-    primaryChat: [{ type: Schema.Types.ObjectId, ref: 'Chat' }],
-    secondaryChat: [{ type: Schema.Types.ObjectId, ref: 'Chat' }],
+    primaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }], // people user sent messages to
+    secondaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }], // people sent messages to user
+
+    online: { type: Boolean, default: false },
+    lastSeen: { type: Date }
 }, {
     timestamps: true
 });
-
-// Optional: Add index for faster phone lookups (useful for OTP login)
-UserSchema.index({ phoneNumber: 1 });
 
 export const User = mongoose.model('User', UserSchema);
