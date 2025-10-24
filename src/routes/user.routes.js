@@ -12,18 +12,18 @@ import {
 const router = express.Router();
 
 /*
-    * @api http://localhost:3000/api/v1/users/:id
+    * @api http://localhost:3000/api/v1/users/:U_id
     * @method GET
     * @accept userId from path params and auth token from headers
     * @return user profile data 
 */
-router.get('/:id', verifyJWT, getUserProfile);
+router.get('/:U_id', verifyJWT, getUserProfile);
 
 /*
     * @api http://localhost:3000/api/v1/users/updateUserProfile
     * @method PATCH
     * @accept userId from path params and auth token from headers
-    * @accept body: {U_Id, description}
+    * @accept body: {description}
     * @return updated user profile data
 */
 router.patch('/updateUserProfile', verifyJWT, updateUserProfile);

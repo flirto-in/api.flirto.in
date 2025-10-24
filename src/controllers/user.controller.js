@@ -4,16 +4,16 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 
-// GET /users/:id → Get user profile
+// GET /users/:U_id → Get user profile
 export const getUserProfile = asyncHandler(async (req, res) => {
-    const { id } = req.params;
+    const { U_Id } = req.params; 
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new ApiError(400, "Invalid user ID");
+    if (!U_Id) {
+        throw new ApiError(400, "U_Id is required");
     }
 
-    const user = await User.findById(id)
-        .select('-__v')
+    const user = await User.findOne({ U_Id })
+        .select('-__v');
 
     if (!user) {
         throw new ApiError(404, "User not found");
@@ -23,6 +23,7 @@ export const getUserProfile = asyncHandler(async (req, res) => {
         new ApiResponse(200, { user }, "User profile retrieved successfully")
     );
 });
+
 
 // GET /users/me → Get cureent user profile
 export const me = asyncHandler(async (req, res) => {
