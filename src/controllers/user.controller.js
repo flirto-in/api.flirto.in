@@ -24,10 +24,30 @@ export const getUserProfile = asyncHandler(async (req, res) => {
     );
 });
 
-// PUT /users/:id → Update user profile
+// GET /users/me → Get cureent user profile
+export const me = asyncHandler(async (req, res) => {
+    const id = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new ApiError(400, "Invalid user ID");
+    }
+
+    const user = await User.findById(id)
+        .select('-__v')
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, { user }, "User profile retrieved successfully")
+    );
+});
+
+// PUT /users → Update user profile
 export const updateUserProfile = asyncHandler(async (req, res) => {
-    const { id } = req.params;
     const updateData = req.body;
+    const id = req.user._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new ApiError(400, "Invalid user ID");
@@ -47,6 +67,10 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
 
     res.status(200).json(new ApiResponse(200, { user }, "User profile updated successfully"));
 });
+
+
+// todo changes in req.user._id
+
 
 // GET /users/:id/primaryChat → Get primaryChat
 export const getUserPrimaryChat = asyncHandler(async (req, res) => {

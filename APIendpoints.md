@@ -3,7 +3,7 @@
     ### @api http://localhost:3000/api/v1/auth/send-otp
     ### @method POST
     ### @accept phoneNumber in body
-    ### @return otp sent to user phone number
+    ### @return otp sent to user phone number ✅
 
 
 
@@ -20,11 +20,17 @@
     ### @return user profile data
 
 
+    ### @api http://localhost:3000/api/v1/users/me
+    ### @method GET
+    ### @accept auth token from headers
+    ### @return user current profile data
 
-    ### @api http://localhost:3000/api/v1/users/:id
+
+
+    ### @api http://localhost:3000/api/v1/users/updateUserProfile
     ### @method PATCH
-    ### @accept userId from path params and auth token from headers
-    ### @accept body: {U_Id, description}
+    ### @accept auth token from headers
+    ### @accept body: {description}
     ### @return updated user profile data
 
 

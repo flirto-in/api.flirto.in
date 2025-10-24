@@ -37,7 +37,7 @@ const authUser = asyncHandler(async (req, res) => {
     const { phoneNumber, otp } = req.body;
     if (!phoneNumber) throw new ApiError(400, "Phone number is required");
     if (!otp) throw new ApiError(400, "OTP is required");
-    if (otp !== "6969") throw new ApiError(401, "Invalid OTP");
+    if (otp !== 6969) throw new ApiError(401, "Invalid OTP");
 
     let user = await User.findOne({ phoneNumber });
 

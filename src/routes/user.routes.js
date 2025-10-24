@@ -20,13 +20,13 @@ const router = express.Router();
 router.get('/:id', verifyJWT, getUserProfile);
 
 /*
-    * @api http://localhost:3000/api/v1/users/:id
+    * @api http://localhost:3000/api/v1/users/updateUserProfile
     * @method PATCH
     * @accept userId from path params and auth token from headers
     * @accept body: {U_Id, description}
     * @return updated user profile data
 */
-router.patch('/:id', verifyJWT, updateUserProfile);
+router.patch('/updateUserProfile', verifyJWT, updateUserProfile);
 
 /*
     * @api http://localhost:3000/api/v1/users/:id/primaryChat
