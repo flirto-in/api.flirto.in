@@ -39,7 +39,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     );
 
     const user = await User.findByIdAndUpdate(id, sanitizedUpdate, { new: true })
-        .select('-__v -refreshToken');
+        .select('-__v ');
 
     if (!user) {
         throw new ApiError(404, 'User not found');
@@ -98,7 +98,7 @@ export const updateUserChat = asyncHandler(async (req, res) => {
     }
 
     const user = await User.findByIdAndUpdate(id, { primaryChat, secondaryChat }, { new: true })
-        .select('-__v -refreshToken');
+        .select('-__v ');
 
     if (!user) {
         throw new ApiError(404, "User not found");
