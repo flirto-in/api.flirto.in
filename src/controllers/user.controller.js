@@ -14,8 +14,6 @@ export const getUserProfile = asyncHandler(async (req, res) => {
 
     const user = await User.findById(id)
         .select('-__v')
-        .populate('posts', 'content createdAt')
-        .populate('rooms', 'name description');
 
     if (!user) {
         throw new ApiError(404, "User not found");
