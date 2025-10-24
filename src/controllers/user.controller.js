@@ -110,3 +110,31 @@ export const updateUserChat = asyncHandler(async (req, res) => {
         new ApiResponse(200, { user }, "User chat updated successfully")
     );
 });
+
+// POST /users/:id/accept/:requesterId
+export const acceptChatRequest = asyncHandler(async (req, res) => {
+    const { id, requesterId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(requesterId)) {
+        throw new ApiError(400, "Invalid user ID");
+    }
+
+    const user = await User.findById(id);
+    const requester = await User.findById(requesterId);
+
+    if (!user || !requester) throw new ApiError(404, "User not found");
+
+    // Remove from secondaryChat
+    user.secondaryChat = user.secondaryChat.filter(u => u.toString() !== requesterId);
+    // Add to primaryChat if not already
+    if (!user.primaryChat.includes(requesterId)) user.primaryChat.push(requesterId);
+    await user.save();
+
+    // Add to sender's primaryChat if not already
+    if (!requester.primaryChat.includes(id)) {
+        requester.primaryChat.push(id);
+        await requester.save();
+    }
+
+    res.status(200).json({ message: "Chat request accepted", primaryChat: user.primaryChat });
+});

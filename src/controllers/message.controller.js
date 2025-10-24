@@ -24,10 +24,11 @@ export const getChats = asyncHandler(async (req, res) => {
         .populate('secondaryChat', 'U_Id description online lastSeen');
 
     return res.status(200).json(new ApiResponse(200, {
-        primaryChat: user.primaryChat,
-        secondaryChat: user.secondaryChat
+        primaryChat: user.primaryChat,      
+        secondaryChat: user.secondaryChat   
     }));
 });
+
 
 // Get messages between two users
 export const getMessages = asyncHandler(async (req, res) => {

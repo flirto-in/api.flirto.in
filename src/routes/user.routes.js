@@ -5,7 +5,8 @@ import {
     updateUserProfile,
     getUserPrimaryChat,
     getUserSecondaryChat,
-    updateUserChat
+    updateUserChat,
+    acceptChatRequest
 } from '../controllers/user.controller.js';
 
 const router = express.Router();
@@ -51,5 +52,9 @@ router.get('/:id/secondaryChat', verifyJWT, getUserSecondaryChat);
     * @return updated user chat info
 */
 router.patch('/:id/chat/:chatId', verifyJWT, updateUserChat);
+
+
+router.post('/:id/accept/:requesterId', verifyJWT, acceptChatRequest);
+
 
 export default router;

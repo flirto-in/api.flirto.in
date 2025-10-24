@@ -8,8 +8,12 @@ const UserSchema = new Schema({
     U_Id: { type: String, unique: true, index: true },  // Custom user ID
     description: { type: String, default: "" },
 
-    primaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }], // people user sent messages to
-    secondaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }], // people sent messages to user
+    secondaryChat: [{
+        user: { type: Schema.Types.ObjectId, ref: 'User' },
+        requestedAt: { type: Date, default: Date.now }
+    }],
+    primaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+
 
     online: { type: Boolean, default: false },
     lastSeen: { type: Date }

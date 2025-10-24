@@ -4,7 +4,7 @@ import http from "http";
 import { Server } from "socket.io";
 import { app } from "./app.js";
 import connectDb from "./db/index.db.js";
-import Message  from "./models/Message.models.js";
+import Message from "./models/Message.models.js";
 
 const port = process.env.PORT || 8000;
 const server = http.createServer(app);
@@ -31,7 +31,25 @@ io.on("connection", (socket) => {
     socket.on("private-message", async ({ senderId, receiverId, text }) => {
         if (!senderId || !receiverId || !text) return;
 
-        const message = await Message.create({ senderId, receiverId, text });
+        // Find sender and receiver
+        const sender = await User.findById(senderId);
+        const receiver = await User.findById(receiverId);
+
+        if (!sender || !receiver) return;
+
+        // Check if receiver already has sender in primaryChat
+        const isPrimary = receiver.primaryChat.includes(senderId);
+
+        if (!isPrimary) {
+            // Add to secondaryChat if not already there
+            if (!receiver.secondaryChat.includes(senderId)) {
+                receiver.secondaryChat.push(senderId);
+                await receiver.save();
+            }
+        }
+
+        // Save message
+        const message = await Message.create({ senderId, receiverId, text, pending: !isPrimary });
 
         // Emit to receiver
         const receiverSocketId = onlineUsers.get(receiverId);
@@ -40,6 +58,7 @@ io.on("connection", (socket) => {
         // Echo to sender
         socket.emit("receive-message", message);
     });
+
 
     socket.on("disconnect", () => {
         for (const [userId, socketId] of onlineUsers.entries()) {
