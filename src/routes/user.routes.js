@@ -6,12 +6,20 @@ import {
     getUserPrimaryChat,
     getUserSecondaryChat,
     updateUserChat,
-    acceptChatRequest
+    acceptChatRequest,
+    me
 } from '../controllers/user.controller.js';
 
 const router = express.Router();
 
-/*
+
+//  ### @api http://localhost:3000/api/v1/users/me    ✅
+//     ### @method GET
+//     ### @accept auth token from headers
+//     ### @return user current profile data
+router.get('/me', verifyJWT, me);
+
+/**
     * @api http://localhost:3000/api/v1/users/:U_id
     * @method GET
     * @accept userId from path params and auth token from headers

@@ -6,7 +6,8 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 
 // GET /users/:U_id → Get user profile
 export const getUserProfile = asyncHandler(async (req, res) => {
-    const { U_Id } = req.params; 
+    const U_Id  = req.params.U_id; 
+    console.log(U_Id);
 
     if (!U_Id) {
         throw new ApiError(400, "U_Id is required");

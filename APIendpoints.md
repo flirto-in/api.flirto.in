@@ -14,9 +14,9 @@
 
 # User
 
-    ### @api http://localhost:3000/api/v1/users/:id    ✅
+    ### @api http://localhost:3000/api/v1/users/:U_id    ✅
     ### @method GET
-    ### @accept userId from path params and auth token from headers
+    ### @accept U_Id from path params and auth token from headers
     ### @return user profile data
 
 
