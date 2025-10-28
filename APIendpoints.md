@@ -35,21 +35,21 @@
 
 
 
-    ### @api http://localhost:3000/api/v1/users/:id/primaryChat
+    ### @api http://localhost:3000/api/v1/users/primaryChat
     ### @method GET
     ### @accept userId from path params and auth token from headers
     ### @return list of primary chats (sent by user)
 
 
 
-    ### @api http://localhost:3000/api/v1/users/:id/secondaryChat
+    ### @api http://localhost:3000/api/v1/users/secondaryChat
     ### @method GET
     ### @accept userId from path params and auth token from headers
     ### @return list of secondary chats (received or pending)
 
 
 
-    ### @api http://localhost:3000/api/v1/users/:id/chat/:chatId
+    ### @api http://localhost:3000/api/v1/users/chat/:chatId
     ### @method PATCH
     ### @accept userId and chatId from path params, auth token from headers
     ### @accept body: {primaryChat, secondaryChat}

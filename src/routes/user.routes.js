@@ -7,7 +7,10 @@ import {
     getUserSecondaryChat,
     updateUserChat,
     acceptChatRequest,
-    me
+    me,
+    blockUser,
+    unblockUser,
+    getBlockedUsers
 } from '../controllers/user.controller.js';
 
 const router = express.Router();
@@ -37,32 +40,37 @@ router.get('/:U_id', verifyJWT, getUserProfile);
 router.patch('/updateUserProfile', verifyJWT, updateUserProfile);
 
 /*
-    * @api http://localhost:3000/api/v1/users/:id/primaryChat
+    * @api http://localhost:3000/api/v1/users/primaryChat
     * @method GET
     * @accept userId from path params and auth token from headers
     * @return list of primary chats (sent by user)
 */
-router.get('/:id/primaryChat', verifyJWT, getUserPrimaryChat);
+router.get('/primaryChat', verifyJWT, getUserPrimaryChat);
 
 /*
-    * @api http://localhost:3000/api/v1/users/:id/secondaryChat
+    * @api http://localhost:3000/api/v1/users/secondaryChat
     * @method GET
     * @accept userId from path params and auth token from headers
     * @return list of secondary chats (received or pending)
 */
-router.get('/:id/secondaryChat', verifyJWT, getUserSecondaryChat);
+router.get('/secondaryChat', verifyJWT, getUserSecondaryChat);
 
 /*
-    * @api http://localhost:3000/api/v1/users/:id/chat/:chatId
+    * @api http://localhost:3000/api/v1/users/chat/:chatId
     * @method PATCH
     * @accept userId and chatId from path params, auth token from headers
     * @accept body: {primaryChat, secondaryChat}
     * @return updated user chat info
 */
-router.patch('/:id/chat/:chatId', verifyJWT, updateUserChat);
+router.patch('/chat/:chatId', verifyJWT, updateUserChat);
 
 
-router.post('/:id/accept/:requesterId', verifyJWT, acceptChatRequest);
+router.post('/accept/:requesterId', verifyJWT, acceptChatRequest);
 
+
+// Block/Unblock
+router.post('/block/:userId', verifyJWT, blockUser);
+router.post('/unblock/:userId', verifyJWT, unblockUser);
+router.get('/blocked', verifyJWT, getBlockedUsers);
 
 export default router;
