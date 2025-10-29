@@ -77,15 +77,34 @@ router.get('/blocked', verifyJWT, getBlockedUsers);
 // POST /users/push-token
 // Save push token to user's device array
 router.post('/push-token', verifyJWT, async (req, res) => {
-    const { pushToken } = req.body;
-    const userId = req.user._id;
+    try {
+        const { pushToken } = req.body;
+        const userId = req.user._id;
 
-    // Add pushToken to user's deviceKeys array if not exists
-    await User.findByIdAndUpdate(userId, {
-        $addToSet: { deviceKeys: pushToken }
-    });
+        if (!pushToken) {
+            return res.status(400).json({
+                success: false,
+                message: 'Push token is required'
+            });
+        }
 
-    res.json({ success: true });
+        // Save to fcmToken field (existing field in User model)
+        await User.findByIdAndUpdate(userId, {
+            fcmToken: pushToken
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Push token registered successfully',
+            data: { pushToken }
+        });
+    } catch (error) {
+        console.error('Error registering push token:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Internal server error'
+        });
+    }
 });
 
 export default router;
