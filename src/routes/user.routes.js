@@ -73,4 +73,19 @@ router.post('/block/:userId', verifyJWT, blockUser);
 router.post('/unblock/:userId', verifyJWT, unblockUser);
 router.get('/blocked', verifyJWT, getBlockedUsers);
 
+
+// POST /users/push-token
+// Save push token to user's device array
+router.post('/push-token', verifyJWT, async (req, res) => {
+    const { pushToken } = req.body;
+    const userId = req.user._id;
+
+    // Add pushToken to user's deviceKeys array if not exists
+    await User.findByIdAndUpdate(userId, {
+        $addToSet: { deviceKeys: pushToken }
+    });
+
+    res.json({ success: true });
+});
+
 export default router;
