@@ -52,7 +52,11 @@ const messageSchema = new mongoose.Schema(
             expiresAt: { type: Date }, // When message should auto-delete
             ttlSeconds: { type: Number }, // Time-to-live in seconds
             deletedAt: { type: Date } // When message was actually deleted
-        }
+        },
+
+        // Ephemeral / Temp session
+        ephemeral: { type: Boolean, default: false }, // true if belongs to temp session and should be purged when session ends
+        tempSessionId: { type: mongoose.Schema.Types.ObjectId, ref: "TempSession" }, // reference to temp session
     },
     { timestamps: true }
 );
@@ -62,6 +66,7 @@ messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
 messageSchema.index({ deliveryStatus: 1, read: 1 });
 messageSchema.index({ roomId: 1, createdAt: -1 }); // For public rooms
 messageSchema.index({ 'selfDestruct.expiresAt': 1 }, { partialFilterExpression: { 'selfDestruct.enabled': true } }); // TTL index
+messageSchema.index({ ephemeral: 1, tempSessionId: 1 });
 
 const Message = mongoose.model("Message", messageSchema);
 

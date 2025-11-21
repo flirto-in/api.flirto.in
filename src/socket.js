@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { User } from './models/User.models.js';
 import Message from './models/Message.models.js';
+import TempSession from './models/TempSession.models.js';
 // import { sendPushNotification } from './firebase.js'; 
 
 let io;
@@ -145,10 +146,10 @@ export const initializeSocket = (server) => {
 
         // ============== MESSAGE EVENTS ==============
 
-        // Send message
+        // Send message (supports temp sessions)
         socket.on('message:send', async (data) => {
             try {
-                const { receiverId, roomId, text, encryptedText, iv, encryptedSessionKey, selfDestruct } = data;
+            const { receiverId, roomId, text, encryptedText, iv, encryptedSessionKey, selfDestruct, tempSessionId, messageType, mediaUrl } = data;
 
                 // Skip chat initialization for room messages
                 if (!roomId && receiverId) {
@@ -243,6 +244,31 @@ export const initializeSocket = (server) => {
                     deliveryStatus: 'sent',
                     pending: false
                 };
+
+                // Ephemeral temp session handling: via explicit tempSessionId or roomId prefix
+                let isEphemeral = false;
+                if (tempSessionId) {
+                    const session = await TempSession.findById(tempSessionId);
+                    if (!session || !session.active) {
+                        return socket.emit('error', { message: 'Temp session inactive' });
+                    }
+                    messageData.tempSessionId = tempSessionId;
+                    messageData.ephemeral = true;
+                    isEphemeral = true;
+                } else if (roomId && roomId.startsWith('temp_room_')) {
+                    const code = roomId.replace('temp_room_', '');
+                    const session = await TempSession.findOne({ code, active: true });
+                    if (session) {
+                        messageData.tempSessionId = session._id;
+                        messageData.ephemeral = true;
+                        isEphemeral = true;
+                    }
+                }
+
+                // Disallow media/attachments in ephemeral temp sessions
+                if (isEphemeral && (mediaUrl || (messageType && messageType !== 'text'))) {
+                    return socket.emit('error', { message: 'Media/attachments are not allowed in temp sessions' });
+                }
 
                 // Handle room vs direct message
                 if (roomId) {

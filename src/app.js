@@ -20,11 +20,13 @@ app.use(cookieParser());
 import userRoutes from './routes/user.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import messageRoutes from './routes/message.routes.js'; // ADD THIS
+import tempRoutes from './routes/temp.routes.js';
 
 // Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/messages', messageRoutes); // ADD THIS
+app.use('/api/v1/temp', tempRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
