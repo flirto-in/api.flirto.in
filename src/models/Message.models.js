@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const messageSchema = new mongoose.Schema(
     {
         senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-        receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+        receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Optional for public rooms
+        roomId: { type: String }, // For public rooms like 'public_temp'
 
         // For non-encrypted or backward compatibility
         text: { type: String },
@@ -43,7 +44,15 @@ const messageSchema = new mongoose.Schema(
         // Soft delete
         deleted: { type: Boolean, default: false },
         deletedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-        deletedAt: { type: Date }
+        deletedAt: { type: Date },
+
+        // Self-destruct settings
+        selfDestruct: {
+            enabled: { type: Boolean, default: false },
+            expiresAt: { type: Date }, // When message should auto-delete
+            ttlSeconds: { type: Number }, // Time-to-live in seconds
+            deletedAt: { type: Date } // When message was actually deleted
+        }
     },
     { timestamps: true }
 );
@@ -51,6 +60,8 @@ const messageSchema = new mongoose.Schema(
 // Index for faster queries
 messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
 messageSchema.index({ deliveryStatus: 1, read: 1 });
+messageSchema.index({ roomId: 1, createdAt: -1 }); // For public rooms
+messageSchema.index({ 'selfDestruct.expiresAt': 1 }, { partialFilterExpression: { 'selfDestruct.enabled': true } }); // TTL index
 
 const Message = mongoose.model("Message", messageSchema);
 

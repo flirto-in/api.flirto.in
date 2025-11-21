@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 
 const UserSchema = new Schema({
     phoneNumber: { type: String, required: true, unique: true }, 
-    U_Id: { type: String, unique: true, index: true },
+    U_Id: { type: String, unique: true },
     description: { type: String, default: "" },
 
     // E2E Encryption keys
@@ -21,6 +21,9 @@ const UserSchema = new Schema({
         requestedAt: { type: Date, default: Date.now }
     }],
     primaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+
+    // Muted chats
+    mutedChats: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 
     // Blocked users
     blockedUsers: [{
@@ -45,9 +48,7 @@ const UserSchema = new Schema({
     timestamps: true
 });
 
-// Index for faster queries
-UserSchema.index({ phoneNumber: 1 });
-UserSchema.index({ U_Id: 1 });
+// No need for explicit indexes since unique: true already creates them
 UserSchema.index({ online: 1 });
 
 export const User = mongoose.model('User', UserSchema);

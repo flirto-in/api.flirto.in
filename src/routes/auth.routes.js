@@ -2,6 +2,7 @@ import express from 'express';
 import {
     sendOtp,
     authUser,
+    tempSession,
 } from '../controllers/auth.controller.js';
 
 const router = express.Router();
@@ -21,5 +22,12 @@ router.post('/send-otp', sendOtp);
     * @return user data and access token
 */
 router.post('/authentication', authUser);        
+
+/*
+    * @api http://localhost:3000/api/v1/auth/temp-session
+    * @method POST
+    * @return temporary user and access token
+*/
+router.post('/temp-session', tempSession);
 
 export default router;

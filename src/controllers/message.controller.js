@@ -5,6 +5,45 @@ import { User } from '../models/User.models.js';
 import Message from '../models/Message.models.js';
 import { getIO, onlineUsers } from '../socket.js';
 
+// Get messages for a specific room (public rooms)
+export const getRoomMessages = asyncHandler(async (req, res) => {
+    const { roomId } = req.params;
+    const { page = 1, limit = 50 } = req.query;
+    
+    // Validate room access (for now, allow public_temp)
+    if (!roomId.startsWith('public_') && !roomId.startsWith('temp_room_')) {
+        throw new ApiError(403, 'Access to this room is not allowed');
+    }
+
+    const skip = (page - 1) * limit;
+
+    const messages = await Message.find({
+        roomId,
+        $or: [
+            { deleted: false },
+            { deleted: { $exists: false } }
+        ],
+        $or: [
+            { 'selfDestruct.enabled': false },
+            { 'selfDestruct.enabled': { $exists: false } },
+            { 'selfDestruct.expiresAt': { $gt: new Date() } }
+        ]
+    })
+        .populate('senderId', 'U_Id phoneNumber')
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit))
+        .skip(skip);
+
+    res.status(200).json(
+        new ApiResponse(200, { 
+            messages: messages.reverse(), // Reverse to get chronological order
+            roomId,
+            page: parseInt(page),
+            limit: parseInt(limit)
+        }, 'Room messages retrieved successfully')
+    );
+});
+
 // Send a message (handles first message = chat request logic)
 export const sendMessage = asyncHandler(async (req, res) => {
     const { receiverId, text, encryptedText, iv, encryptedSessionKey, messageType, mediaUrl } = req.body;
@@ -29,49 +68,70 @@ export const sendMessage = asyncHandler(async (req, res) => {
         throw new ApiError(403, 'Cannot send message to blocked user');
     }
 
-    // Check if receiver is in sender's primaryChat
-    const isInPrimaryChat = sender.primaryChat.some(
+    // Check if receiver is already in sender's chats (primary or secondary)
+    const isInSenderPrimaryChat = sender.primaryChat.some(
         id => id.toString() === receiverId
     );
-
-    // If first message, add receiver to sender's primaryChat
-    if (!isInPrimaryChat) {
-        sender.primaryChat.push(receiverId);
-        await sender.save();
-    }
-
-    // Check if sender is in receiver's primaryChat
-    const senderInReceiverPrimary = receiver.primaryChat.some(
-        id => id.toString() === senderId.toString()
+    const isInSenderSecondaryChat = sender.secondaryChat.some(
+        chat => chat.user.toString() === receiverId
     );
 
-    // If not in receiver's primary, add to secondary (message request)
-    if (!senderInReceiverPrimary) {
-        const existsInSecondary = receiver.secondaryChat.some(
-            chat => chat.user.toString() === senderId.toString()
-        );
+    // If first message from sender, add receiver to sender's secondaryChat
+    if (!isInSenderPrimaryChat && !isInSenderSecondaryChat) {
+        sender.secondaryChat.push({
+            user: receiverId,
+            requestedAt: new Date()
+        });
+        await sender.save();
 
-        if (!existsInSecondary) {
-            receiver.secondaryChat.push({
-                user: senderId,
+        // Notify sender about new chat created
+        const io = getIO();
+        const senderSocketId = onlineUsers.get(senderId.toString());
+        if (senderSocketId) {
+            io.to(senderSocketId).emit('chat:created', {
+                user: {
+                    _id: receiver._id,
+                    U_Id: receiver.U_Id,
+                    description: receiver.description,
+                    online: receiver.online,
+                    lastSeen: receiver.lastSeen
+                },
+                isInSecondary: true
+            });
+        }
+    }
+
+    // Check if sender is in receiver's chats (primary or secondary)
+    const isInReceiverPrimaryChat = receiver.primaryChat.some(
+        id => id.toString() === senderId.toString()
+    );
+    const isInReceiverSecondaryChat = receiver.secondaryChat.some(
+        chat => chat.user.toString() === senderId.toString()
+    );
+
+    // If not in receiver's chats, add to secondary (message request)
+    if (!isInReceiverPrimaryChat && !isInReceiverSecondaryChat) {
+        receiver.secondaryChat.push({
+            user: senderId,
+            requestedAt: new Date()
+        });
+        await receiver.save();
+
+        // Notify receiver about new chat request
+        const io = getIO();
+        const receiverSocketId = onlineUsers.get(receiverId.toString());
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('chat:request', {
+                from: senderId,
+                sender: {
+                    _id: sender._id,
+                    U_Id: sender.U_Id,
+                    description: sender.description,
+                    online: sender.online,
+                    lastSeen: sender.lastSeen
+                },
                 requestedAt: new Date()
             });
-            await receiver.save();
-
-            // Notify receiver about new chat request
-            const io = getIO();
-            const receiverSocketId = onlineUsers.get(receiverId.toString());
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit('chat:request', {
-                    from: senderId,
-                    sender: {
-                        _id: sender._id,
-                        U_Id: sender.U_Id,
-                        description: sender.description
-                    },
-                    requestedAt: new Date()
-                });
-            }
         }
     }
 
@@ -126,9 +186,25 @@ export const getChats = asyncHandler(async (req, res) => {
 
     if (!user) throw new ApiError(404, "User not found");
 
+    // Add muted status to chats
+    const mutedChatIds = (user.mutedChats || []).map(id => id.toString());
+
+    const primaryChatWithMuteStatus = user.primaryChat.map(chat => ({
+        ...chat.toObject(),
+        isMuted: mutedChatIds.includes(chat._id.toString())
+    }));
+
+    const secondaryChatWithMuteStatus = user.secondaryChat.map(chat => ({
+        ...chat.toObject(),
+        user: {
+            ...chat.user.toObject(),
+            isMuted: mutedChatIds.includes(chat.user._id.toString())
+        }
+    }));
+
     return res.status(200).json(new ApiResponse(200, {
-        primaryChat: user.primaryChat,
-        secondaryChat: user.secondaryChat
+        primaryChat: primaryChatWithMuteStatus,
+        secondaryChat: secondaryChatWithMuteStatus
     }, "Chats retrieved successfully"));
 });
 
@@ -266,4 +342,195 @@ export const deleteMessageForEveryone = asyncHandler(async (req, res) => {
     }
 
     res.status(200).json(new ApiResponse(200, { message }, 'Message deleted for everyone'));
+});
+
+// Move user to primary chat section
+export const moveToPrimary = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    const user = await User.findById(currentUserId);
+    const targetUser = await User.findById(userId);
+
+    if (!targetUser) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    // Check if already in primary
+    const alreadyInPrimary = user.primaryChat.some(
+        id => id.toString() === userId
+    );
+
+    if (alreadyInPrimary) {
+        return res.status(200).json(
+            new ApiResponse(200, {}, 'User already in primary chat')
+        );
+    }
+
+    // Remove from secondary if exists
+    user.secondaryChat = user.secondaryChat.filter(
+        chat => chat.user.toString() !== userId
+    );
+
+    // Add to primary
+    user.primaryChat.push(userId);
+    await user.save();
+
+    res.status(200).json(
+        new ApiResponse(200, {}, 'Chat moved to primary successfully')
+    );
+});
+
+// Move user to secondary chat section
+export const moveToSecondary = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    const user = await User.findById(currentUserId);
+    const targetUser = await User.findById(userId);
+
+    if (!targetUser) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    // Check if already in secondary
+    const alreadyInSecondary = user.secondaryChat.some(
+        chat => chat.user.toString() === userId
+    );
+
+    if (alreadyInSecondary) {
+        return res.status(200).json(
+            new ApiResponse(200, {}, 'User already in secondary chat')
+        );
+    }
+
+    // Remove from primary
+    user.primaryChat = user.primaryChat.filter(
+        id => id.toString() !== userId
+    );
+
+    // Add to secondary
+    user.secondaryChat.push({
+        user: userId,
+        requestedAt: new Date()
+    });
+
+    await user.save();
+
+    res.status(200).json(
+        new ApiResponse(200, {}, 'Chat moved to secondary successfully')
+    );
+});
+
+// Delete entire chat with a user
+export const deleteChat = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    const user = await User.findById(currentUserId);
+    const targetUser = await User.findById(userId);
+
+    if (!targetUser) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    // Remove from both primary and secondary
+    user.primaryChat = user.primaryChat.filter(
+        id => id.toString() !== userId
+    );
+
+    user.secondaryChat = user.secondaryChat.filter(
+        chat => chat.user.toString() !== userId
+    );
+
+    // Delete all messages between users (mark as deleted for current user)
+    await Message.updateMany(
+        {
+            $or: [
+                { senderId: currentUserId, receiverId: userId },
+                { senderId: userId, receiverId: currentUserId }
+            ]
+        },
+        {
+            $addToSet: { deletedBy: currentUserId }
+        }
+    );
+
+    await user.save();
+
+    res.status(200).json(
+        new ApiResponse(200, {}, 'Chat deleted successfully')
+    );
+});
+
+// Clear all messages in a chat
+export const clearChat = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    const targetUser = await User.findById(userId);
+
+    if (!targetUser) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    // Mark all messages as deleted for current user
+    await Message.updateMany(
+        {
+            $or: [
+                { senderId: currentUserId, receiverId: userId },
+                { senderId: userId, receiverId: currentUserId }
+            ]
+        },
+        {
+            $addToSet: { deletedBy: currentUserId }
+        }
+    );
+
+    res.status(200).json(
+        new ApiResponse(200, {}, 'Chat cleared successfully')
+    );
+});
+
+// Toggle mute status for a chat
+export const muteChat = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    const user = await User.findById(currentUserId);
+    const targetUser = await User.findById(userId);
+
+    if (!targetUser) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    // Initialize mutedChats array if doesn't exist
+    if (!user.mutedChats) {
+        user.mutedChats = [];
+    }
+
+    // Check if already muted
+    const isMuted = user.mutedChats.some(
+        id => id.toString() === userId
+    );
+
+    if (isMuted) {
+        // Unmute
+        user.mutedChats = user.mutedChats.filter(
+            id => id.toString() !== userId
+        );
+    } else {
+        // Mute
+        user.mutedChats.push(userId);
+    }
+
+    await user.save();
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            { isMuted: !isMuted },
+            `Chat ${!isMuted ? 'muted' : 'unmuted'} successfully`
+        )
+    );
 });

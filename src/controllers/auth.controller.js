@@ -55,4 +55,19 @@ const authUser = asyncHandler(async (req, res) => {
     );
 });
 
-export { sendOtp, authUser };
+// Create a temporary anonymous session (guest user)
+const tempSession = asyncHandler(async (req, res) => {
+    // Create a unique temporary phoneNumber to satisfy schema uniqueness
+    const tempPhone = `temp_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+
+    const U_Id = `GUEST_${Date.now()}`;
+    const user = await User.create({ phoneNumber: tempPhone, U_Id, description: 'Temporary guest session' });
+
+    const accessToken = generateAccessToken(user);
+    user.accessToken = accessToken;
+    await user.save();
+
+    return res.status(200).json(new ApiResponse(200, { accessToken, user }, 'Temporary session created'));
+});
+
+export { sendOtp, authUser, tempSession };

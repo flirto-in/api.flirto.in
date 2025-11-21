@@ -1,5 +1,6 @@
 import express from 'express';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { User } from '../models/User.models.js';
 import {
     getUserProfile,
     updateUserProfile,
