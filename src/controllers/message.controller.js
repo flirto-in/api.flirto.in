@@ -4,6 +4,8 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { User } from '../models/User.models.js';
 import Message from '../models/Message.models.js';
 import { getIO, onlineUsers } from '../socket.js';
+import { upload } from '../middlewares/multer.middlewares.js';
+import { uplodOnCloudinary } from '../utils/cloudinary.js';
 
 // Get messages for a specific room (public rooms)
 export const getRoomMessages = asyncHandler(async (req, res) => {
@@ -533,4 +535,91 @@ export const muteChat = asyncHandler(async (req, res) => {
             `Chat ${!isMuted ? 'muted' : 'unmuted'} successfully`
         )
     );
+});
+
+// Upload a file and create (or optionally hide) a message
+// Accepts multipart/form-data: file, receiverId OR roomId, optional hideInTemp (boolean)
+export const uploadFileMessage = asyncHandler(async (req, res) => {
+    const senderId = req.user._id;
+    const { receiverId, roomId, hideInTemp } = req.body;
+
+    if (!req.file) {
+        throw new ApiError(400, 'File is required');
+    }
+
+    // Determine if temp session (room based)
+    const isTempRoom = roomId && roomId.startsWith('temp_room_');
+
+    // For direct temp sessions, we would detect via receiver but current design uses room prefix.
+    // Upload file to Cloudinary
+    const uploaded = await uplodOnCloudinary(req.file.path);
+    if (!uploaded) throw new ApiError(500, 'Upload failed');
+
+    // Decide messageType from mimetype
+    let messageType = 'file';
+    if (req.file.mimetype.startsWith('image/')) messageType = 'image';
+    else if (req.file.mimetype.startsWith('video/')) messageType = 'video';
+    else if (req.file.mimetype.startsWith('audio/')) messageType = 'audio';
+
+    // If temp room and requirement is to not show in chat, set hidden
+    const hidden = !!(isTempRoom && hideInTemp);
+
+    // If temp room and we do NOT allow media (previous rule) but user wants upload system: we allow upload but hide
+    // (Server earlier blocked media in socket path; here we bypass message creation visibility via hidden flag.)
+
+    const messageData = {
+        senderId,
+        messageType,
+        mediaUrl: uploaded.secure_url || uploaded.url,
+        deliveryStatus: 'sent',
+        hidden
+    };
+
+    if (roomId) {
+        messageData.roomId = roomId;
+    } else if (receiverId) {
+        // Validate receiver exists
+        const receiver = await User.findById(receiverId);
+        if (!receiver) throw new ApiError(404, 'Receiver not found');
+        messageData.receiverId = receiverId;
+    } else {
+        throw new ApiError(400, 'receiverId or roomId is required');
+    }
+
+    // Mark ephemeral if temp room
+    if (isTempRoom) {
+        // Attempt to link to TempSession for cleanup
+        const code = roomId.replace('temp_room_', '');
+        const tempSession = await (await import('../models/TempSession.models.js')).default.findOne({ code, active: true });
+        if (tempSession) {
+            messageData.tempSessionId = tempSession._id;
+            messageData.ephemeral = true;
+        }
+    }
+
+    const message = await Message.create(messageData);
+
+    // Populate minimal fields for response
+    const populated = await Message.findById(message._id)
+        .populate('senderId', 'U_Id phoneNumber online')
+        .populate('receiverId', 'U_Id phoneNumber online');
+
+    // Emit via socket only if not hidden
+    const io = getIO();
+    if (!hidden) {
+        if (roomId) {
+            io.to(roomId).emit('message:receive', populated);
+            message.deliveryStatus = 'delivered';
+            await message.save();
+        } else if (receiverId) {
+            const receiverSocketId = onlineUsers.get(receiverId.toString());
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('message:receive', populated);
+                message.deliveryStatus = 'delivered';
+                await message.save();
+            }
+        }
+    }
+
+    return res.status(201).json(new ApiResponse(201, { message: populated }, 'File uploaded'));
 });

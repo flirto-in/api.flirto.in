@@ -12,8 +12,10 @@ import {
     moveToSecondary,
     deleteChat,
     clearChat,
-    muteChat
+    muteChat,
+    uploadFileMessage
 } from '../controllers/message.controller.js';
+import { upload } from '../middlewares/multer.middlewares.js';
 
 const router = express.Router();
 
@@ -113,5 +115,13 @@ router.put('/:userId/clear-chat', verifyJWT, clearChat);
  * @return success message
  */
 router.put('/:userId/mute', verifyJWT, muteChat);
+
+/**
+ * @api http://localhost:3000/api/v1/messages/upload
+ * @method POST (multipart/form-data)
+ * @accept fields: receiverId OR roomId, hideInTemp? (boolean), file (binary)
+ * @return created message (may be hidden if temp)
+ */
+router.post('/upload', verifyJWT, upload.single('file'), uploadFileMessage);
 
 export default router;

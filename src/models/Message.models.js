@@ -57,6 +57,9 @@ const messageSchema = new mongoose.Schema(
         // Ephemeral / Temp session
         ephemeral: { type: Boolean, default: false }, // true if belongs to temp session and should be purged when session ends
         tempSessionId: { type: mongoose.Schema.Types.ObjectId, ref: "TempSession" }, // reference to temp session
+
+        // Visibility control (e.g. hidden file uploads in temp sessions)
+        hidden: { type: Boolean, default: false },
     },
     { timestamps: true }
 );
