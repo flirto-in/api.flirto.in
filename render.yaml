@@ -1,0 +1,52 @@
+# Render Configuration for WhispChat API
+# Documentation: https://docs.render.com/yaml-spec
+
+services:
+  # API Web Service
+  - type: web
+    name: whispchat-api
+    runtime: node
+    env: node
+    region: oregon  # Change to your preferred region
+    plan: free      # Change to starter/standard for production
+    
+    # Build configuration
+    buildCommand: npm install
+    
+    # Start command - IMPORTANT: This must match your package.json start script
+    startCommand: npm start
+    
+    # Health check endpoint (optional but recommended)
+    healthCheckPath: /health
+    
+    # Auto-deploy on push to main branch
+    autoDeploy: true
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      
+      - key: PORT
+        value: 10000  # Render's default port
+      
+      # Database (add your MongoDB URI from Render dashboard or secrets)
+      - key: MONGODB_URI
+        sync: false  # Set this in Render dashboard
+      
+      # JWT Secret (add from Render dashboard)
+      - key: JWT_SECRET
+        sync: false  # Set this in Render dashboard
+      
+      # Other secrets - configure in Render dashboard
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+      
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      
+      - key: CLOUDINARY_API_SECRET
+        sync: false
