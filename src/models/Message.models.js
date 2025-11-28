@@ -1,78 +1,87 @@
 import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
-    {
-        senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-        receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Optional for public rooms
-        roomId: { type: String }, // For public rooms like 'public_temp'
+	{
+		senderId: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "User",
+			required: true,
+		},
+		receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Optional for public rooms
+		roomId: { type: String }, // For public rooms like 'public_temp'
 
-        // For non-encrypted or backward compatibility
-        text: { type: String },
+		// For non-encrypted or backward compatibility
+		text: { type: String },
 
-        // For E2E encryption (Signal Protocol)
-        encryptedText: { type: String },
-        ratchetHeader: { type: String }, // Signal Protocol Double Ratchet header
-        nonce: { type: String }, // ChaCha20-Poly1305 nonce
-        
-        // Legacy encryption fields (deprecated - use Signal Protocol above)
-        iv: { type: String }, // Initialization vector (deprecated)
-        encryptedSessionKey: { type: String }, // Session key encrypted with receiver's public key (deprecated)
+		// For E2E encryption (Signal Protocol)
+		encryptedText: { type: String },
+		ratchetHeader: { type: String }, // Signal Protocol Double Ratchet header
+		nonce: { type: String }, // ChaCha20-Poly1305 nonce
 
-        // Message status
-        pending: { type: Boolean, default: false },
-        deliveryStatus: {
-            type: String,
-            enum: ['sent', 'delivered', 'failed'],
-            default: 'sent'
-        },
-        read: { type: Boolean, default: false },
-        readAt: { type: Date },
+		// Legacy encryption fields (deprecated - use Signal Protocol above)
+		iv: { type: String }, // Initialization vector (deprecated)
+		encryptedSessionKey: { type: String }, // Session key encrypted with receiver's public key (deprecated)
 
-        // Message type
-        messageType: {
-            type: String,
-            enum: ['text', 'image', 'video', 'file', 'audio'],
-            default: 'text'
-        },
+		// Message status
+		pending: { type: Boolean, default: false },
+		deliveryStatus: {
+			type: String,
+			enum: ["sent", "delivered", "failed"],
+			default: "sent",
+		},
+		read: { type: Boolean, default: false },
+		readAt: { type: Date },
 
-        // Media URL for non-text messages
-        mediaUrl: { type: String },
+		// Message type
+		messageType: {
+			type: String,
+			enum: ["text", "image", "video", "file", "audio"],
+			default: "text",
+		},
 
-        // Reactions
-        reactions: [{
-            userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-            emoji: { type: String },
-            timestamp: { type: Date, default: Date.now }
-        }],
+		// Media URL for non-text messages
+		mediaUrl: { type: String },
 
-        // Soft delete
-        deleted: { type: Boolean, default: false },
-        deletedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-        deletedAt: { type: Date },
+		// Reactions
+		reactions: [
+			{
+				userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+				emoji: { type: String },
+				timestamp: { type: Date, default: Date.now },
+			},
+		],
 
-        // Self-destruct settings
-        selfDestruct: {
-            enabled: { type: Boolean, default: false },
-            expiresAt: { type: Date }, // When message should auto-delete
-            ttlSeconds: { type: Number }, // Time-to-live in seconds
-            deletedAt: { type: Date } // When message was actually deleted
-        },
+		// Soft delete
+		deleted: { type: Boolean, default: false },
+		deletedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+		deletedAt: { type: Date },
 
-        // Ephemeral / Temp session
-        ephemeral: { type: Boolean, default: false }, // true if belongs to temp session and should be purged when session ends
-        tempSessionId: { type: mongoose.Schema.Types.ObjectId, ref: "TempSession" }, // reference to temp session
+		// Self-destruct settings
+		selfDestruct: {
+			enabled: { type: Boolean, default: false },
+			expiresAt: { type: Date }, // When message should auto-delete
+			ttlSeconds: { type: Number }, // Time-to-live in seconds
+			deletedAt: { type: Date }, // When message was actually deleted
+		},
 
-        // Visibility control (e.g. hidden file uploads in temp sessions)
-        hidden: { type: Boolean, default: false },
-    },
-    { timestamps: true }
+		// Ephemeral / Temp session
+		ephemeral: { type: Boolean, default: false }, // true if belongs to temp session and should be purged when session ends
+		tempSessionId: { type: mongoose.Schema.Types.ObjectId, ref: "TempSession" }, // reference to temp session
+
+		// Visibility control (e.g. hidden file uploads in temp sessions)
+		hidden: { type: Boolean, default: false },
+	},
+	{ timestamps: true }
 );
 
 // Index for faster queries
 messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
 messageSchema.index({ deliveryStatus: 1, read: 1 });
 messageSchema.index({ roomId: 1, createdAt: -1 }); // For public rooms
-messageSchema.index({ 'selfDestruct.expiresAt': 1 }, { partialFilterExpression: { 'selfDestruct.enabled': true } }); // TTL index
+messageSchema.index(
+	{ "selfDestruct.expiresAt": 1 },
+	{ partialFilterExpression: { "selfDestruct.enabled": true } }
+); // TTL index
 messageSchema.index({ ephemeral: 1, tempSessionId: 1 });
 
 const Message = mongoose.model("Message", messageSchema);

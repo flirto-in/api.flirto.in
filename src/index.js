@@ -16,13 +16,13 @@ initializeSocket(server);
 
 // Connect to database and start server
 connectDb()
-    .then(() => {
-        server.listen(port, () => {
-            console.log(`🚀 Server running at http://localhost:${port}`);
-            console.log(`🔌 WebSocket server ready`);
-        });
-    })
-    .catch((err) => {
-        console.error("❌ DB connection failed:", err);
-        process.exit(1);
-    });
+	.then(() => {
+		server.listen(port, () => {
+			console.log(`🚀 Server running at http://localhost:${port}`);
+			console.log(`🔌 WebSocket server ready`);
+		});
+	})
+	.catch((err) => {
+		console.error("❌ DB connection failed:", err);
+		process.exit(1);
+	});

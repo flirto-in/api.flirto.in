@@ -1,57 +1,66 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const UserSchema = new Schema({
-    phoneNumber: { type: String, required: true, unique: true }, 
-    U_Id: { type: String, unique: true },
-    description: { type: String, default: "" },
+const UserSchema = new Schema(
+	{
+		phoneNumber: { type: String, required: true, unique: true },
+		U_Id: { type: String, unique: true },
+		description: { type: String, default: "" },
 
-    // Single device login tracking
-    currentDeviceId: { type: String }, // Current device ID for single device login
+		// Single device login tracking
+		currentDeviceId: { type: String }, // Current device ID for single device login
 
-    // E2E Encryption keys
-    publicKey: { type: String }, // User's public key
-    deviceKeys: [{
-        deviceId: { type: String },
-        publicKey: { type: String },
-        addedAt: { type: Date, default: Date.now }
-    }],
+		// E2E Encryption keys
+		publicKey: { type: String }, // User's public key
+		deviceKeys: [
+			{
+				deviceId: { type: String },
+				publicKey: { type: String },
+				addedAt: { type: Date, default: Date.now },
+			},
+		],
 
-    // Chat relationships
-    secondaryChat: [{
-        user: { type: Schema.Types.ObjectId, ref: 'User' },
-        requestedAt: { type: Date, default: Date.now }
-    }],
-    primaryChat: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+		// Chat relationships
+		secondaryChat: [
+			{
+				user: { type: Schema.Types.ObjectId, ref: "User" },
+				requestedAt: { type: Date, default: Date.now },
+			},
+		],
+		primaryChat: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
-    // Muted chats
-    mutedChats: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+		// Muted chats
+		mutedChats: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
-    // Blocked users
-    blockedUsers: [{
-        userId: { type: Schema.Types.ObjectId, ref: 'User' },
-        blockedAt: { type: Date, default: Date.now }
-    }],
+		// Blocked users
+		blockedUsers: [
+			{
+				userId: { type: Schema.Types.ObjectId, ref: "User" },
+				blockedAt: { type: Date, default: Date.now },
+			},
+		],
 
-    // Online status
-    online: { type: Boolean, default: false },
-    lastSeen: { type: Date },
+		// Online status
+		online: { type: Boolean, default: false },
+		lastSeen: { type: Date },
 
-    // Push notification token
-    fcmToken: { type: String }, // Firebase Cloud Messaging token
+		// Push notification token
+		fcmToken: { type: String }, // Firebase Cloud Messaging token
 
-    // Settings
-    settings: {
-        readReceipts: { type: Boolean, default: true },
-        typingIndicators: { type: Boolean, default: true },
-        lastSeenVisible: { type: Boolean, default: true }
-    }
-}, {
-    timestamps: true
-});
+		// Settings
+		settings: {
+			readReceipts: { type: Boolean, default: true },
+			typingIndicators: { type: Boolean, default: true },
+			lastSeenVisible: { type: Boolean, default: true },
+		},
+	},
+	{
+		timestamps: true,
+	}
+);
 
 // No need for explicit indexes since unique: true already creates them
 UserSchema.index({ online: 1 });
 
-export const User = mongoose.model('User', UserSchema);
+export const User = mongoose.model("User", UserSchema);

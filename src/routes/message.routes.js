@@ -1,21 +1,21 @@
-import express from 'express';
-import { verifyJWT } from '../middlewares/auth.middleware.js';
+import express from "express";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 import {
-    sendMessage,
-    searchUserByUid,
-    getChats,
-    getMessages,
-    getRoomMessages,
-    deleteMessageForMe,
-    deleteMessageForEveryone,
-    moveToPrimary,
-    moveToSecondary,
-    deleteChat,
-    clearChat,
-    muteChat,
-    uploadFileMessage
-} from '../controllers/message.controller.js';
-import { upload } from '../middlewares/multer.middlewares.js';
+	sendMessage,
+	searchUserByUid,
+	getChats,
+	getMessages,
+	getRoomMessages,
+	deleteMessageForMe,
+	deleteMessageForEveryone,
+	moveToPrimary,
+	moveToSecondary,
+	deleteChat,
+	clearChat,
+	muteChat,
+	uploadFileMessage,
+} from "../controllers/message.controller.js";
+import { upload } from "../middlewares/multer.middlewares.js";
 
 const router = express.Router();
 
@@ -26,7 +26,7 @@ const router = express.Router();
  * @accept auth token from headers
  * @return sent message object
  */
-router.post('/send', verifyJWT, sendMessage);
+router.post("/send", verifyJWT, sendMessage);
 
 /**
  * @api http://localhost:3000/api/v1/messages/search
@@ -34,7 +34,7 @@ router.post('/send', verifyJWT, sendMessage);
  * @accept query param: uid (U_Id), auth token from headers
  * @return user info if found
  */
-router.get('/search', verifyJWT, searchUserByUid);
+router.get("/search", verifyJWT, searchUserByUid);
 
 /**
  * @api http://localhost:3000/api/v1/messages/room/:roomId
@@ -42,7 +42,7 @@ router.get('/search', verifyJWT, searchUserByUid);
  * @accept roomId param, query: page, limit, auth token from headers
  * @return room messages
  */
-router.get('/room/:roomId', verifyJWT, getRoomMessages);
+router.get("/room/:roomId", verifyJWT, getRoomMessages);
 
 /**
  * @api http://localhost:3000/api/v1/messages/all
@@ -50,7 +50,7 @@ router.get('/room/:roomId', verifyJWT, getRoomMessages);
  * @accept auth token from headers
  * @return list of all chats (primary + secondary)
  */
-router.get('/all', verifyJWT, getChats);
+router.get("/all", verifyJWT, getChats);
 
 /**
  * @api http://localhost:3000/api/v1/messages/:userId/messages
@@ -58,7 +58,7 @@ router.get('/all', verifyJWT, getChats);
  * @accept userId from path params, auth token from headers
  * @return list of messages with specific user
  */
-router.get('/:userId/messages', verifyJWT, getMessages);
+router.get("/:userId/messages", verifyJWT, getMessages);
 
 /**
  * @api http://localhost:3000/api/v1/messages/:messageId/delete-for-me
@@ -66,7 +66,7 @@ router.get('/:userId/messages', verifyJWT, getMessages);
  * @accept messageId from path params, auth token from headers
  * @return success message
  */
-router.delete('/:messageId/delete-for-me', verifyJWT, deleteMessageForMe);
+router.delete("/:messageId/delete-for-me", verifyJWT, deleteMessageForMe);
 
 /**
  * @api http://localhost:3000/api/v1/messages/:messageId/delete-for-everyone
@@ -74,7 +74,11 @@ router.delete('/:messageId/delete-for-me', verifyJWT, deleteMessageForMe);
  * @accept messageId from path params, auth token from headers
  * @return success message (only sender can delete, within 1 hour)
  */
-router.delete('/:messageId/delete-for-everyone', verifyJWT, deleteMessageForEveryone);
+router.delete(
+	"/:messageId/delete-for-everyone",
+	verifyJWT,
+	deleteMessageForEveryone
+);
 
 /**
  * @api http://localhost:3000/api/v1/messages/:userId/move-to-primary
@@ -82,7 +86,7 @@ router.delete('/:messageId/delete-for-everyone', verifyJWT, deleteMessageForEver
  * @accept userId from path params, auth token from headers
  * @return success message
  */
-router.put('/:userId/move-to-primary', verifyJWT, moveToPrimary);
+router.put("/:userId/move-to-primary", verifyJWT, moveToPrimary);
 
 /**
  * @api http://localhost:3000/api/v1/messages/:userId/move-to-secondary
@@ -90,7 +94,7 @@ router.put('/:userId/move-to-primary', verifyJWT, moveToPrimary);
  * @accept userId from path params, auth token from headers
  * @return success message
  */
-router.put('/:userId/move-to-secondary', verifyJWT, moveToSecondary);
+router.put("/:userId/move-to-secondary", verifyJWT, moveToSecondary);
 
 /**
  * @api http://localhost:3000/api/v1/messages/:userId/delete-chat
@@ -98,7 +102,7 @@ router.put('/:userId/move-to-secondary', verifyJWT, moveToSecondary);
  * @accept userId from path params, auth token from headers
  * @return success message
  */
-router.delete('/:userId/delete-chat', verifyJWT, deleteChat);
+router.delete("/:userId/delete-chat", verifyJWT, deleteChat);
 
 /**
  * @api http://localhost:3000/api/v1/messages/:userId/clear-chat
@@ -106,7 +110,7 @@ router.delete('/:userId/delete-chat', verifyJWT, deleteChat);
  * @accept userId from path params, auth token from headers
  * @return success message
  */
-router.put('/:userId/clear-chat', verifyJWT, clearChat);
+router.put("/:userId/clear-chat", verifyJWT, clearChat);
 
 /**
  * @api http://localhost:3000/api/v1/messages/:userId/mute
@@ -114,7 +118,7 @@ router.put('/:userId/clear-chat', verifyJWT, clearChat);
  * @accept userId from path params, auth token from headers
  * @return success message
  */
-router.put('/:userId/mute', verifyJWT, muteChat);
+router.put("/:userId/mute", verifyJWT, muteChat);
 
 /**
  * @api http://localhost:3000/api/v1/messages/upload
@@ -122,6 +126,6 @@ router.put('/:userId/mute', verifyJWT, muteChat);
  * @accept fields: receiverId OR roomId, hideInTemp? (boolean), file (binary)
  * @return created message (may be hidden if temp)
  */
-router.post('/upload', verifyJWT, upload.single('file'), uploadFileMessage);
+router.post("/upload", verifyJWT, upload.single("file"), uploadFileMessage);
 
 export default router;
