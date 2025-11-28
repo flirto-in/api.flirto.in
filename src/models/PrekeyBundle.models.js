@@ -38,7 +38,7 @@ const prekeyBundleSchema = new mongoose.Schema(
 		// Pool of one-time prekeys (consumed on use)
 		oneTimePrekeys: [
 			{
-				id: { type: String, required: true, unique: true },
+				id: { type: String, required: true },
 				publicKey: { type: String, required: true },
 			},
 		],
