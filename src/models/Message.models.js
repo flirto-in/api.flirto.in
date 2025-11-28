@@ -9,10 +9,14 @@ const messageSchema = new mongoose.Schema(
         // For non-encrypted or backward compatibility
         text: { type: String },
 
-        // For E2E encryption
+        // For E2E encryption (Signal Protocol)
         encryptedText: { type: String },
-        iv: { type: String }, // Initialization vector
-        encryptedSessionKey: { type: String }, // Session key encrypted with receiver's public key
+        ratchetHeader: { type: String }, // Signal Protocol Double Ratchet header
+        nonce: { type: String }, // ChaCha20-Poly1305 nonce
+        
+        // Legacy encryption fields (deprecated - use Signal Protocol above)
+        iv: { type: String }, // Initialization vector (deprecated)
+        encryptedSessionKey: { type: String }, // Session key encrypted with receiver's public key (deprecated)
 
         // Message status
         pending: { type: Boolean, default: false },

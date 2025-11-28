@@ -88,6 +88,23 @@ export const initializeSocket = (server) => {
     io.on('connection', (socket) => {
         console.log(`User connected: ${socket.userId}`);
 
+        // Check if user is already connected from another device (single device login)
+        const existingSocketId = onlineUsers.get(socket.userId);
+        if (existingSocketId && existingSocketId !== socket.id) {
+            // Emit logout event to the old device
+            io.to(existingSocketId).emit('force:logout', {
+                reason: 'Logged in from another device',
+                message: 'You have been logged out because you logged in on another device'
+            });
+            console.log(`🔄 User ${socket.userId} logged in from new device. Logging out old device.`);
+            
+            // Disconnect the old socket
+            const oldSocket = io.sockets.sockets.get(existingSocketId);
+            if (oldSocket) {
+                oldSocket.disconnect(true);
+            }
+        }
+
         // Add user to online users
         onlineUsers.set(socket.userId, socket.id);
 
@@ -235,12 +252,18 @@ export const initializeSocket = (server) => {
                 }
 
                 // Prepare message data
+                // CRITICAL: Never store plaintext when E2EE is enabled!
                 const messageData = {
                     senderId: socket.userId,
-                    text: text || encryptedText,
-                    encryptedText,
-                    iv,
-                    encryptedSessionKey,
+                    // Only store text if no encrypted version (backward compatibility)
+                    text: encryptedText ? undefined : text,
+                    encryptedText: encryptedText || undefined,
+                    // Store Signal Protocol ratchet header and nonce
+                    ratchetHeader: data.ratchetHeader || undefined,
+                    nonce: data.nonce || undefined,
+                    // Legacy encryption fields (deprecated)
+                    iv: iv || undefined,
+                    encryptedSessionKey: encryptedSessionKey || undefined,
                     deliveryStatus: 'sent',
                     pending: false
                 };
@@ -304,11 +327,17 @@ export const initializeSocket = (server) => {
                     // Receiver is offline, send push notification
                     const receiver = await User.findById(receiverId);
                     if (receiver?.fcmToken) {
+                        // SECURITY: Never include message content in push notifications for E2EE!
+                        // Only send wake notification
+                        const notificationBody = encryptedText 
+                            ? 'New encrypted message' // E2EE - no content preview
+                            : (text?.substring(0, 50) || 'New message'); // Plaintext legacy
+                        
                         // await sendPushNotification(
                         //     receiver.fcmToken,
                         //     `New message from ${socket.user.U_Id}`,
-                        //     text?.substring(0, 50) || 'New message',
-                        //     { messageId: message._id.toString(), senderId: socket.userId }
+                        //     notificationBody,
+                        //     { messageId: message._id.toString(), senderId: socket.userId, encrypted: !!encryptedText }
                         // );
                     }
                 }

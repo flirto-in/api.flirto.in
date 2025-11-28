@@ -7,6 +7,9 @@ const UserSchema = new Schema({
     U_Id: { type: String, unique: true },
     description: { type: String, default: "" },
 
+    // Single device login tracking
+    currentDeviceId: { type: String }, // Current device ID for single device login
+
     // E2E Encryption keys
     publicKey: { type: String }, // User's public key
     deviceKeys: [{

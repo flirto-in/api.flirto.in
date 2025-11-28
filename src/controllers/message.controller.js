@@ -138,13 +138,19 @@ export const sendMessage = asyncHandler(async (req, res) => {
     }
 
     // Create the message
+    // CRITICAL: Never store plaintext when E2EE is enabled!
     const message = await Message.create({
         senderId,
         receiverId,
-        text,
-        encryptedText,
-        iv,
-        encryptedSessionKey,
+        // Only store text if no encrypted version (backward compatibility)
+        text: encryptedText ? undefined : text,
+        encryptedText: encryptedText || undefined,
+        // Signal Protocol fields
+        ratchetHeader: req.body.ratchetHeader || undefined,
+        nonce: req.body.nonce || undefined,
+        // Legacy fields (deprecated)
+        iv: iv || undefined,
+        encryptedSessionKey: encryptedSessionKey || undefined,
         messageType: messageType || 'text',
         mediaUrl,
         deliveryStatus: 'sent'
