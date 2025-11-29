@@ -381,12 +381,12 @@ export const initializeSocket = (server) => {
 							? "New encrypted message" // E2EE - no content preview
 							: text?.substring(0, 50) || "New message"; // Plaintext legacy
 
-						// await sendPushNotification(
-						//     receiver.fcmToken,
-						//     `New message from ${socket.user.U_Id}`,
-						//     notificationBody,
-						//     { messageId: message._id.toString(), senderId: socket.userId, encrypted: !!encryptedText }
-						// );
+						await sendPushNotification(
+							receiver.fcmToken,
+							`New message from ${socket.user.U_Id}`,
+							notificationBody,
+							{ messageId: message._id.toString(), senderId: socket.userId, encrypted: !!encryptedText }
+						);
 					}
 				}
 
