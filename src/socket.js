@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { User } from "./models/User.models.js";
 import Message from "./models/Message.models.js";
 import TempSession from "./models/TempSession.models.js";
-// import { sendPushNotification } from './firebase.js';
+import { sendPushNotification } from './expoPush.js';
 
 let io;
 
@@ -87,6 +87,17 @@ export const initializeSocket = (server) => {
 
 			socket.userId = user._id.toString();
 			socket.user = user;
+
+			// ✅ FIX: Verify device ID for single-device login
+			const deviceId = socket.handshake.auth.deviceId;
+			socket.deviceId = deviceId;
+
+			// Check if this device is authorized
+			if (user.currentDeviceId && deviceId && user.currentDeviceId !== deviceId) {
+				console.log(`❌ Unauthorized device attempting to connect: ${deviceId} (expected: ${user.currentDeviceId})`);
+				return next(new Error("Logged in from another device"));
+			}
+
 			next();
 		} catch (error) {
 			next(new Error("Authentication error"));

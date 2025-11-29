@@ -565,34 +565,64 @@ export const muteChat = asyncHandler(async (req, res) => {
 });
 
 // Upload a file and create (or optionally hide) a message
-// Accepts multipart/form-data: file, receiverId OR roomId, optional hideInTemp (boolean)
+// NOW SUPPORTS: Encrypted file uploads (E2EE)
+// Accepts multipart/form-data: file OR encryptedBlob, receiverId OR roomId
 export const uploadFileMessage = asyncHandler(async (req, res) => {
 	const senderId = req.user._id;
-	const { receiverId, roomId, hideInTemp } = req.body;
-
-	if (!req.file) {
-		throw new ApiError(400, "File is required");
-	}
+	const {
+		receiverId,
+		roomId,
+		hideInTemp,
+		// E2EE fields
+		encryptedFileKey,
+		fileNonce,
+		originalFileName,
+		fileMimeType,
+		isEncrypted
+	} = req.body;
 
 	// Determine if temp session (room based)
 	const isTempRoom = roomId && roomId.startsWith("temp_room_");
 
-	// For direct temp sessions, we would detect via receiver but current design uses room prefix.
-	// Upload file to Cloudinary
-	const uploaded = await uplodOnCloudinary(req.file.path);
-	if (!uploaded) throw new ApiError(500, "Upload failed");
-
-	// Decide messageType from mimetype
+	let uploaded;
 	let messageType = "file";
-	if (req.file.mimetype.startsWith("image/")) messageType = "image";
-	else if (req.file.mimetype.startsWith("video/")) messageType = "video";
-	else if (req.file.mimetype.startsWith("audio/")) messageType = "audio";
+
+	// Handle E2EE encrypted file upload
+	if (isEncrypted === "true" && req.file) {
+		// File is already encrypted blob uploaded as multipart
+		// Upload encrypted blob to Cloudinary as raw data
+		uploaded = await uplodOnCloudinary(req.file.path);
+		if (!uploaded) throw new ApiError(500, "Upload failed");
+
+		// Determine messageType from original MIME type
+		if (fileMimeType?.startsWith("image/")) messageType = "image";
+		else if (fileMimeType?.startsWith("video/")) messageType = "video";
+		else if (fileMimeType?.startsWith("audio/")) messageType = "audio";
+
+		console.log(`✅ Encrypted ${messageType} uploaded to Cloudinary (size: ${req.file.size} bytes)`);
+	}
+	// Handle legacy plaintext file upload (for backward compatibility)
+	else if (req.file) {
+		if (!req.file) {
+			throw new ApiError(400, "File is required");
+		}
+
+		// Upload file to Cloudinary (legacy mode - NOT encrypted)
+		uploaded = await uplodOnCloudinary(req.file.path);
+		if (!uploaded) throw new ApiError(500, "Upload failed");
+
+		// Decide messageType from mimetype
+		if (req.file.mimetype.startsWith("image/")) messageType = "image";
+		else if (req.file.mimetype.startsWith("video/")) messageType = "video";
+		else if (req.file.mimetype.startsWith("audio/")) messageType = "audio";
+
+		console.warn(`⚠️ WARNING: Plaintext ${messageType} uploaded (E2EE not enabled)`);
+	} else {
+		throw new ApiError(400, "File is required");
+	}
 
 	// If temp room and requirement is to not show in chat, set hidden
 	const hidden = !!(isTempRoom && hideInTemp);
-
-	// If temp room and we do NOT allow media (previous rule) but user wants upload system: we allow upload but hide
-	// (Server earlier blocked media in socket path; here we bypass message creation visibility via hidden flag.)
 
 	const messageData = {
 		senderId,
@@ -601,6 +631,14 @@ export const uploadFileMessage = asyncHandler(async (req, res) => {
 		deliveryStatus: "sent",
 		hidden,
 	};
+
+	// Store E2EE encryption metadata if encrypted
+	if (isEncrypted === "true") {
+		messageData.encryptedFileKey = encryptedFileKey;
+		messageData.fileNonce = fileNonce;
+		messageData.originalFileName = originalFileName;
+		messageData.fileMimeType = fileMimeType;
+	}
 
 	if (roomId) {
 		messageData.roomId = roomId;

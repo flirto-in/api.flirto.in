@@ -42,6 +42,12 @@ const messageSchema = new mongoose.Schema(
 		// Media URL for non-text messages
 		mediaUrl: { type: String },
 
+		// Encrypted media fields (for E2EE file transfers)
+		encryptedFileKey: { type: String }, // File key encrypted with Double Ratchet
+		fileNonce: { type: String }, // Nonce for file decryption
+		originalFileName: { type: String }, // Original filename (not sensitive)
+		fileMimeType: { type: String }, // MIME type for display hints
+
 		// Reactions
 		reactions: [
 			{

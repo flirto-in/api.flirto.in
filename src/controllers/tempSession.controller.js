@@ -55,7 +55,13 @@ export const joinTempSession = asyncHandler(async (req, res) => {
 	const already = session.participants.some(
 		(p) => p.userId.toString() === userId.toString()
 	);
+
 	if (!already) {
+		// ✅ SECURITY: Limit to 2 participants for 1-to-1 E2EE
+		if (session.participants.length >= 2) {
+			throw new ApiError(400, "Session full (max 2 participants for E2EE)");
+		}
+
 		const alias = `Anon-${generateCode(4)}`;
 		session.participants.push({ userId, alias });
 		await session.save();
@@ -73,6 +79,10 @@ export const joinTempSession = asyncHandler(async (req, res) => {
 				code: session.code,
 				alias: participant.alias,
 				participants: session.participants.map((p) => ({ alias: p.alias })),
+				// Send other participant's ID for E2EE session
+				otherParticipantId: session.participants.find(
+					(p) => p.userId.toString() !== userId.toString()
+				)?.userId,
 			},
 			"Joined temp session"
 		)
