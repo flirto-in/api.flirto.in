@@ -5,6 +5,7 @@ import http from "http";
 import { app } from "./app.js";
 import connectDb from "./db/index.db.js";
 import { initializeSocket } from "./socket.js";
+import { initCleanupJob } from "./jobs/cleanupTempSessions.js";
 
 const port = process.env.PORT || 8000;
 
@@ -20,6 +21,9 @@ connectDb()
 		server.listen(port, () => {
 			console.log(`🚀 Server running at http://localhost:${port}`);
 			console.log(`🔌 WebSocket server ready`);
+
+			// ✅ Initialize temp session cleanup job
+			initCleanupJob();
 		});
 	})
 	.catch((err) => {
