@@ -13,7 +13,7 @@ export const getUserProfile = asyncHandler(async (req, res) => {
 		throw new ApiError(400, "U_Id is required");
 	}
 
-	const user = await User.findOne({ U_Id }).select("-__v");
+	const user = await User.findOne({ U_Id }).select("-__v -phoneNumber");
 
 	if (!user) {
 		throw new ApiError(404, "User not found");
@@ -56,7 +56,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
 		throw new ApiError(400, "Invalid user ID");
 	}
 
-	const allowedFields = ["description"];
+	const allowedFields = ["about", "avatarId"];
 	const sanitizedUpdate = Object.fromEntries(
 		Object.entries(updateData).filter(([key]) => allowedFields.includes(key))
 	);
@@ -254,7 +254,7 @@ export const unblockUser = asyncHandler(async (req, res) => {
 export const getBlockedUsers = asyncHandler(async (req, res) => {
 	const user = await User.findById(req.user._id).populate(
 		"blockedUsers.userId",
-		"U_Id phoneNumber description"
+		"U_Id about avatarId"
 	);
 
 	res

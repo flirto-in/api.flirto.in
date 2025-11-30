@@ -6,7 +6,9 @@ const UserSchema = new Schema(
 	{
 		phoneNumber: { type: String, required: true, unique: true },
 		U_Id: { type: String, unique: true },
-		description: { type: String, default: "" },
+		// Privacy: No real names or phone numbers displayed
+		avatarId: { type: Number, default: 1, min: 1, max: 10 }, // 1-10 predefined icons
+		about: { type: String, default: "Hey there! I am using WhispChat." }, // Status message
 
 		// Single device login tracking
 		currentDeviceId: { type: String }, // Current device ID for single device login

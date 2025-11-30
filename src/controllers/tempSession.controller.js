@@ -71,6 +71,26 @@ export const joinTempSession = asyncHandler(async (req, res) => {
 		(p) => p.userId.toString() === userId.toString()
 	);
 
+	// ✅ NOTIFY CREATOR: Emit event to the other participant
+	const otherParticipant = session.participants.find(
+		(p) => p.userId.toString() !== userId.toString()
+	);
+
+	if (otherParticipant) {
+		try {
+			const io = getIO();
+			// Emit to creator's personal room (userId)
+			io.to(otherParticipant.userId.toString()).emit("temp:session:joined", {
+				sessionId: session._id,
+				participantId: userId,
+				alias: participant.alias,
+			});
+			console.log(`📢 Notified creator ${otherParticipant.userId} about joiner ${userId}`);
+		} catch (e) {
+			console.error("Failed to notify creator:", e);
+		}
+	}
+
 	return res.status(200).json(
 		new ApiResponse(
 			200,
@@ -80,9 +100,7 @@ export const joinTempSession = asyncHandler(async (req, res) => {
 				alias: participant.alias,
 				participants: session.participants.map((p) => ({ alias: p.alias })),
 				// Send other participant's ID for E2EE session
-				otherParticipantId: session.participants.find(
-					(p) => p.userId.toString() !== userId.toString()
-				)?.userId,
+				otherParticipantId: otherParticipant?.userId,
 			},
 			"Joined temp session"
 		)

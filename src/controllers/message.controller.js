@@ -578,7 +578,7 @@ export const uploadFileMessage = asyncHandler(async (req, res) => {
 		fileNonce,
 		originalFileName,
 		fileMimeType,
-		isEncrypted
+		isEncrypted,
 	} = req.body;
 
 	// Determine if temp session (room based)
@@ -599,7 +599,9 @@ export const uploadFileMessage = asyncHandler(async (req, res) => {
 		else if (fileMimeType?.startsWith("video/")) messageType = "video";
 		else if (fileMimeType?.startsWith("audio/")) messageType = "audio";
 
-		console.log(`✅ Encrypted ${messageType} uploaded to Cloudinary (size: ${req.file.size} bytes)`);
+		console.log(
+			`✅ Encrypted ${messageType} uploaded to Cloudinary (size: ${req.file.size} bytes)`
+		);
 	}
 	// Handle legacy plaintext file upload (for backward compatibility)
 	else if (req.file) {
@@ -616,7 +618,9 @@ export const uploadFileMessage = asyncHandler(async (req, res) => {
 		else if (req.file.mimetype.startsWith("video/")) messageType = "video";
 		else if (req.file.mimetype.startsWith("audio/")) messageType = "audio";
 
-		console.warn(`⚠️ WARNING: Plaintext ${messageType} uploaded (E2EE not enabled)`);
+		console.warn(
+			`⚠️ WARNING: Plaintext ${messageType} uploaded (E2EE not enabled)`
+		);
 	} else {
 		throw new ApiError(400, "File is required");
 	}

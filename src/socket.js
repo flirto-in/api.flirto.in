@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { User } from "./models/User.models.js";
 import Message from "./models/Message.models.js";
 import TempSession from "./models/TempSession.models.js";
-import { sendPushNotification } from './expoPush.js';
+import { sendPushNotification } from "./expoPush.js";
 
 let io;
 
@@ -93,8 +93,14 @@ export const initializeSocket = (server) => {
 			socket.deviceId = deviceId;
 
 			// Check if this device is authorized
-			if (user.currentDeviceId && deviceId && user.currentDeviceId !== deviceId) {
-				console.log(`❌ Unauthorized device attempting to connect: ${deviceId} (expected: ${user.currentDeviceId})`);
+			if (
+				user.currentDeviceId &&
+				deviceId &&
+				user.currentDeviceId !== deviceId
+			) {
+				console.log(
+					`❌ Unauthorized device attempting to connect: ${deviceId} (expected: ${user.currentDeviceId})`
+				);
 				return next(new Error("Logged in from another device"));
 			}
 
@@ -295,18 +301,21 @@ export const initializeSocket = (server) => {
 				}
 
 				// Prepare message data
-				// CRITICAL: Never store plaintext when E2EE is enabled!
+				// CRITICAL: Strict E2EE - Reject plaintext!
+				if (!encryptedText && !mediaUrl) {
+					// Allow media-only messages (which have encrypted keys)
+					// But reject pure plaintext messages
+					throw new Error("Plaintext messages are not allowed. Please update your app.");
+				}
+
 				const messageData = {
 					senderId: socket.userId,
-					// Only store text if no encrypted version (backward compatibility)
-					text: encryptedText ? undefined : text,
+					// NEVER store plaintext 'text' for user messages
+					// text: undefined, 
 					encryptedText: encryptedText || undefined,
 					// Store Signal Protocol ratchet header and nonce
 					ratchetHeader: data.ratchetHeader || undefined,
 					nonce: data.nonce || undefined,
-					// Legacy encryption fields (deprecated)
-					iv: iv || undefined,
-					encryptedSessionKey: encryptedSessionKey || undefined,
 					deliveryStatus: "sent",
 					pending: false,
 				};
@@ -383,7 +392,11 @@ export const initializeSocket = (server) => {
 							receiver.fcmToken,
 							`New message from ${socket.user.U_Id}`,
 							notificationBody,
-							{ messageId: message._id.toString(), senderId: socket.userId, encrypted: !!encryptedText }
+							{
+								messageId: message._id.toString(),
+								senderId: socket.userId,
+								encrypted: !!encryptedText,
+							}
 						);
 					}
 				}
@@ -404,7 +417,12 @@ export const initializeSocket = (server) => {
 				}
 
 				// Send confirmation to sender
-				socket.emit("message:sent", populatedMessage);
+				// ✅ FIXED: Echo back clientMessageId so client can match temp message
+				const responseData = populatedMessage.toObject();
+				if (data.clientMessageId) {
+					responseData.clientMessageId = data.clientMessageId;
+				}
+				socket.emit("message:sent", responseData);
 			} catch (error) {
 				socket.emit("error", { message: error.message });
 			}
